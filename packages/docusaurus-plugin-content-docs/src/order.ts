@@ -1,32 +1,26 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import {
-  Sidebar,
-  SidebarItem,
-  SidebarItemDoc,
-  SidebarItemCategory,
-  Order,
-} from './types';
+import {Sidebar, SidebarItem, Order} from './types';
 
 // Build the docs meta such as next, previous, category and sidebar.
 export default function createOrder(allSidebars: Sidebar = {}): Order {
   const order: Order = {};
 
-  Object.keys(allSidebars).forEach(sidebarId => {
+  Object.keys(allSidebars).forEach((sidebarId) => {
     const sidebar = allSidebars[sidebarId];
 
     const ids: string[] = [];
     const indexItems = ({items}: {items: SidebarItem[]}) => {
-      items.forEach(item => {
+      items.forEach((item) => {
         switch (item.type) {
           case 'category':
             indexItems({
-              items: (item as SidebarItemCategory).items,
+              items: item.items,
             });
             break;
           case 'ref':
@@ -34,12 +28,9 @@ export default function createOrder(allSidebars: Sidebar = {}): Order {
             // Refs and links should not be shown in navigation.
             break;
           case 'doc':
-            ids.push((item as SidebarItemDoc).id);
+            ids.push(item.id);
             break;
           default:
-            throw new Error(
-              `Unknown item type: ${item.type}. Item: ${JSON.stringify(item)}`,
-            );
         }
       });
     };

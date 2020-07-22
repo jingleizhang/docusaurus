@@ -1,26 +1,57 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import fs from 'fs';
+import flatMap from 'lodash.flatmap';
+import fs from 'fs-extra';
 import importFresh from 'import-fresh';
 import {
-  SidebarItemCategory,
   Sidebar,
   SidebarRaw,
   SidebarItem,
   SidebarItemCategoryRaw,
+  SidebarItemRaw,
+  SidebarItemLink,
+  SidebarItemDoc,
+  SidebarCategoryShorthandRaw,
 } from './types';
 
+function isCategoryShorthand(
+  item: SidebarItemRaw,
+): item is SidebarCategoryShorthandRaw {
+  return typeof item !== 'string' && !item.type;
+}
+
+// categories are collapsed by default, unless user set collapsed = false
+const defaultCategoryCollapsedValue = true;
+
 /**
- * Check that item contains only allowed keys
+ * Convert {category1: [item1,item2]} shorthand syntax to long-form syntax
  */
-function assertItem(item: Object, keys: string[]): void {
+function normalizeCategoryShorthand(
+  sidebar: SidebarCategoryShorthandRaw,
+): SidebarItemCategoryRaw[] {
+  return Object.entries(sidebar).map(([label, items]) => ({
+    type: 'category',
+    collapsed: defaultCategoryCollapsedValue,
+    label,
+    items,
+  }));
+}
+
+/**
+ * Check that item contains only allowed keys.
+ */
+function assertItem<K extends string>(
+  item: any,
+  keys: K[],
+): asserts item is Record<K, any> {
   const unknownKeys = Object.keys(item).filter(
-    key => !keys.includes(key) && key !== 'type',
+    // @ts-expect-error: key is always string
+    (key) => !keys.includes(key as string) && key !== 'type',
   );
 
   if (unknownKeys.length) {
@@ -32,73 +63,109 @@ function assertItem(item: Object, keys: string[]): void {
   }
 }
 
-/**
- * Normalizes recursively category and all its children. Ensures, that at the end
- * each item will be an object with the corresponding type
- */
-function normalizeCategory(
-  category: SidebarItemCategoryRaw,
-  level = 0,
-): SidebarItemCategory {
-  assertItem(category, ['items', 'label']);
-
-  if (!Array.isArray(category.items)) {
+function assertIsCategory(
+  item: unknown,
+): asserts item is SidebarItemCategoryRaw {
+  assertItem(item, ['items', 'label', 'collapsed']);
+  if (typeof item.label !== 'string') {
     throw new Error(
-      `Error loading ${category.label} category. Category items must be array.`,
+      `Error loading ${JSON.stringify(item)}. "label" must be a string.`,
     );
   }
+  if (!Array.isArray(item.items)) {
+    throw new Error(
+      `Error loading ${JSON.stringify(item)}. "items" must be an array.`,
+    );
+  }
+  // "collapsed" is an optional property
+  if (item.hasOwnProperty('collapsed') && typeof item.collapsed !== 'boolean') {
+    throw new Error(
+      `Error loading ${JSON.stringify(item)}. "collapsed" must be a boolean.`,
+    );
+  }
+}
 
-  const items: SidebarItem[] = category.items.map(item => {
-    if (typeof item === 'string') {
-      return {
-        type: 'doc',
-        id: item,
-      };
-    }
-    switch (item.type) {
-      case 'category':
-        return normalizeCategory(item as SidebarItemCategoryRaw, level + 1);
-      case 'link':
-        assertItem(item, ['href', 'label']);
-        break;
-      case 'ref':
-        assertItem(item, ['id']);
-        break;
-      default:
-        if (item.type !== 'doc') {
-          throw new Error(`Unknown sidebar item type: ${item.type}`);
-        }
+function assertIsDoc(item: unknown): asserts item is SidebarItemDoc {
+  assertItem(item, ['id']);
+  if (typeof item.id !== 'string') {
+    throw new Error(
+      `Error loading ${JSON.stringify(item)}. "id" must be a string.`,
+    );
+  }
+}
 
-        assertItem(item, ['id']);
-        break;
-    }
-
-    return item as SidebarItem;
-  });
-
-  return {...category, items};
+function assertIsLink(item: unknown): asserts item is SidebarItemLink {
+  assertItem(item, ['href', 'label']);
+  if (typeof item.href !== 'string') {
+    throw new Error(
+      `Error loading ${JSON.stringify(item)}. "href" must be a string.`,
+    );
+  }
+  if (typeof item.label !== 'string') {
+    throw new Error(
+      `Error loading ${JSON.stringify(item)}. "label" must be a string.`,
+    );
+  }
 }
 
 /**
- * Converts sidebars object to mapping to arrays of sidebar item objects
+ * Normalizes recursively item and all its children. Ensures that at the end
+ * each item will be an object with the corresponding type.
+ */
+function normalizeItem(item: SidebarItemRaw): SidebarItem[] {
+  if (typeof item === 'string') {
+    return [
+      {
+        type: 'doc',
+        id: item,
+      },
+    ];
+  }
+  if (isCategoryShorthand(item)) {
+    return flatMap(normalizeCategoryShorthand(item), normalizeItem);
+  }
+  switch (item.type) {
+    case 'category':
+      assertIsCategory(item);
+      return [
+        {
+          collapsed: defaultCategoryCollapsedValue,
+          ...item,
+          items: flatMap(item.items, normalizeItem),
+        },
+      ];
+    case 'link':
+      assertIsLink(item);
+      return [item];
+    case 'ref':
+    case 'doc':
+      assertIsDoc(item);
+      return [item];
+    default: {
+      const extraMigrationError =
+        item.type === 'subcategory'
+          ? "Docusaurus v2: 'subcategory' has been renamed as 'category'"
+          : '';
+      throw new Error(
+        `Unknown sidebar item type [${
+          item.type
+        }]. Sidebar item=${JSON.stringify(item)} ${extraMigrationError}`,
+      );
+    }
+  }
+}
+
+/**
+ * Converts sidebars object to mapping to arrays of sidebar item objects.
  */
 function normalizeSidebar(sidebars: SidebarRaw): Sidebar {
   return Object.entries(sidebars).reduce(
     (acc: Sidebar, [sidebarId, sidebar]) => {
-      let normalizedSidebar: SidebarItemCategoryRaw[];
+      const normalizedSidebar: SidebarItemRaw[] = Array.isArray(sidebar)
+        ? sidebar
+        : normalizeCategoryShorthand(sidebar);
 
-      if (!Array.isArray(sidebar)) {
-        // convert sidebar to a more generic structure
-        normalizedSidebar = Object.entries(sidebar).map(([label, items]) => ({
-          type: 'category',
-          label,
-          items,
-        }));
-      } else {
-        normalizedSidebar = sidebar;
-      }
-
-      acc[sidebarId] = normalizedSidebar.map(item => normalizeCategory(item));
+      acc[sidebarId] = flatMap(normalizedSidebar, normalizeItem);
 
       return acc;
     },
@@ -106,11 +173,20 @@ function normalizeSidebar(sidebars: SidebarRaw): Sidebar {
   );
 }
 
-export default function loadSidebars(sidebarPath: string): Sidebar {
-  // We don't want sidebars to be cached because of hotreloading.
-  let allSidebars: SidebarRaw = {};
-  if (sidebarPath && fs.existsSync(sidebarPath)) {
-    allSidebars = importFresh(sidebarPath) as SidebarRaw;
+export default function loadSidebars(sidebarPaths?: string[]): Sidebar {
+  // We don't want sidebars to be cached because of hot reloading.
+  const allSidebars: SidebarRaw = {};
+
+  if (!sidebarPaths || !sidebarPaths.length) {
+    return {} as Sidebar;
   }
+
+  sidebarPaths.forEach((sidebarPath) => {
+    if (sidebarPath && fs.existsSync(sidebarPath)) {
+      const sidebar = importFresh(sidebarPath) as SidebarRaw;
+      Object.assign(allSidebars, sidebar);
+    }
+  });
+
   return normalizeSidebar(allSidebars);
 }

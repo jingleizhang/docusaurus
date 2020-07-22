@@ -1,28 +1,42 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 import path from 'path';
-import StaticSiteGeneratorPlugin from 'static-site-generator-webpack-plugin';
+import StaticSiteGeneratorPlugin from '@endiliey/static-site-generator-webpack-plugin';
 import {Configuration} from 'webpack';
 import merge from 'webpack-merge';
-import WebpackNiceLog from 'webpack-nicelog';
 
 import {Props} from '@docusaurus/types';
 import {createBaseConfig} from './base';
 import WaitPlugin from './plugins/WaitPlugin';
+import LogPlugin from './plugins/LogPlugin';
 
-export function createServerConfig(props: Props): Configuration {
-  const {baseUrl, routesPaths, outDir} = props;
-  const config = createBaseConfig(props, true);
-  const isProd = process.env.NODE_ENV === 'production';
+export default function createServerConfig({
+  props,
+  minify = true,
+  onLinksCollected = () => {},
+}: {
+  props: Props;
+  minify?: boolean;
+  onLinksCollected?: (staticPagePath: string, links: string[]) => void;
+}): Configuration {
+  const {
+    baseUrl,
+    routesPaths,
+    generatedFilesDir,
+    headTags,
+    preBodyTags,
+    postBodyTags,
+  } = props;
+  const config = createBaseConfig(props, true, minify);
 
   const routesLocation = {};
   // Array of paths to be rendered. Relative to output directory
-  const ssgPaths = routesPaths.map(str => {
+  const ssgPaths = routesPaths.map((str) => {
     const ssgPath =
       baseUrl === '/' ? str : str.replace(new RegExp(`^${baseUrl}`), '/');
     routesLocation[ssgPath] = str;
@@ -42,7 +56,7 @@ export function createServerConfig(props: Props): Configuration {
     plugins: [
       // Wait until manifest from client bundle is generated
       new WaitPlugin({
-        filepath: path.join(outDir, 'client-manifest.json'),
+        filepath: path.join(generatedFilesDir, 'client-manifest.json'),
       }),
 
       // Static site generator webpack plugin.
@@ -50,17 +64,20 @@ export function createServerConfig(props: Props): Configuration {
         entry: 'main',
         locals: {
           baseUrl,
-          outDir,
+          generatedFilesDir,
           routesLocation,
+          headTags,
+          preBodyTags,
+          postBodyTags,
+          onLinksCollected,
         },
         paths: ssgPaths,
       }),
 
       // Show compilation progress bar.
-      new WebpackNiceLog({
+      new LogPlugin({
         name: 'Server',
         color: 'yellow',
-        skipBuildTime: isProd,
       }),
     ],
   });

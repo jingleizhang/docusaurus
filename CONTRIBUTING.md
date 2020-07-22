@@ -4,8 +4,8 @@
 
 The [Open Source Guides](https://opensource.guide/) website has a collection of resources for individuals, communities, and companies who want to learn how to run and contribute to an open source project. Contributors and people new to open source alike will find the following guides especially useful:
 
-* [How to Contribute to Open Source](https://opensource.guide/how-to-contribute/)
-* [Building Welcoming Communities](https://opensource.guide/building-community/)
+- [How to Contribute to Open Source](https://opensource.guide/how-to-contribute/)
+- [Building Welcoming Communities](https://opensource.guide/building-community/)
 
 ## [Code of Conduct](https://code.fb.com/codeofconduct)
 
@@ -32,11 +32,13 @@ If you only want to make content changes you just need to know about versioned d
 
 To make a fix to the published versions you must edit the corresponding markdown file in both folders. If you only made changes in `docs`, be sure to be viewing the `next` version to see the updates (ensure there's `next` in the URL).
 
+> Do not edit the auto-generated files within `versioned_docs/` or `versioned_sidebars/` unless you are sure it is necessary. For example, information about new features should not be documented in versioned docs. Edits made to older versions will not be propagated to newer versions of the docs.
+
 ### Join our Discord Channel
 
 We have `#docusaurus-dev` on [Discord](https://discord.gg/docusaurus) to discuss all things Docusaurus development.
 
-To participate in Docusaurus 2 dev, we have the [`#docusaurus-2-dev`](https://discord.gg/9wrnhY) channel.
+To participate in Docusaurus 2 dev, we have the [`#docusaurus-2-dev`](https://discord.gg/n8nQEAS) channel.
 
 ### Triaging Issues and Pull Requests
 
@@ -67,7 +69,7 @@ We use [GitHub Issues](https://github.com/facebook/docusaurus/issues) for our pu
 
 If you have questions about using Docusaurus, contact the Docusaurus Twitter account at [@docusaurus](https://twitter.com/docusaurus), and we will do our best to answer your questions.
 
-You can also file issues as [feature requests or enhancements](https://github.com/facebook/Docusaurus/labels/feature%20request). If you see anything you'd like to be implemented, create an issue with [feature template](https://raw.githubusercontent.com/facebook/docusaurus/master/.github/ISSUE_TEMPLATE/feature.md)
+You can also file issues as [feature requests or enhancements](https://github.com/facebook/docusaurus/labels/feature%20request). If you see anything you'd like to be implemented, create an issue with [feature template](https://raw.githubusercontent.com/facebook/docusaurus/master/.github/ISSUE_TEMPLATE/feature.md)
 
 ## Reporting New Issues
 
@@ -84,11 +86,22 @@ Facebook has a [bounty program](https://www.facebook.com/whitehat/) for the safe
 
 1. Ensure you have [Yarn](https://yarnpkg.com/) installed.
 1. After cloning the repository, run `yarn install` in the root of the repository.
+1. To start a development server:
 
-   - For Docusaurus 1 development, look into the `packages/docusaurus-1.x` and `website-1.x` directory.
-   - For Docusaurus 2 development, go into the `packages/docusaurus` and `website` directory.
+   - For Docusaurus 1 development, run `yarn start:v1`
+   - For Docusaurus 2 development, run `yarn start`
 
-1. Run `yarn start` in the respective project directory to start a local development server serving the Docusaurus docs.
+## Online one-click setup for contributing
+
+You can use Gitpod (a free, online, VS Code-like IDE) for contributing. With a single click it will launch a workspace (for Docusaurus 2) and automatically:
+
+- clone the docusaurus repo.
+- install the dependencies.
+- run `yarn run start`
+
+So that you can start contributing straight away.
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/facebook/docusaurus)
 
 ## Pull Requests
 
@@ -118,7 +131,7 @@ Please make sure the following is done when submitting a pull request:
 
 1. Fork [the repository](https://github.com/facebook/docusaurus) and create your branch from `master`.
 1. Add the copyright notice to the top of any code new files you've added.
-1. Describe your [**test plan**](#test-plan) in your pull request description. Make sure to [test your changes](https://github.com/facebook/Docusaurus/blob/master/admin/testing-changes-on-Docusaurus-itself.md)!
+1. Describe your [**test plan**](#test-plan) in your pull request description. Make sure to [test your changes](https://github.com/facebook/docusaurus/blob/master/admin/testing-changes-on-Docusaurus-itself.md)!
 1. Make sure your code lints (`yarn prettier && yarn lint`).
 1. Make sure your Jest tests pass (`yarn test`).
 1. If you haven't already, [sign the CLA](https://code.facebook.com/cla).
@@ -130,6 +143,8 @@ All pull requests should be opened against the `master` branch.
 A good test plan has the exact commands you ran and their output, provides screenshots or videos if the pull request changes UI.
 
 - If you've changed APIs, update the documentation.
+
+If you need help testing your changes locally, you can check out the doc on doing [local third party testing](./admin/local-third-party-project-testing.md).
 
 #### Breaking Changes
 
@@ -150,7 +165,7 @@ Copy and paste this to the top of your new file(s):
 
 ```js
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -163,11 +178,11 @@ In order to accept your pull request, we need you to submit a CLA. You only need
 
 ### What Happens Next?
 
-The core Docusaurus team will be monitoring for pull requests. Do help us by making your pull request easy to review by following the guidelines above.
+The core Docusaurus team will be monitoring for pull requests. Do help us by keeping pull requests consistent by following the guidelines above.
 
 ## Style Guide
 
-[Prettier](https://prettier.io) will catch most styling issues that may exist in your code. You can check the status of your code styling by simply running `npm run prettier`.
+[Prettier](https://prettier.io) will catch most styling issues that may exist in your code. You can check the status of your code styling by simply running `yarn prettier`.
 
 However, there are still some styles that Prettier cannot pick up.
 

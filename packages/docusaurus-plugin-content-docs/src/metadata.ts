@@ -1,122 +1,185 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import fs from 'fs-extra';
 import path from 'path';
-import {parse, normalizeUrl} from '@docusaurus/utils';
-import {DocusaurusConfig} from '@docusaurus/types';
+import {
+  parseMarkdownFile,
+  aliasedSitePath,
+  normalizeUrl,
+  getEditUrl,
+} from '@docusaurus/utils';
+import {LoadContext} from '@docusaurus/types';
 
 import lastUpdate from './lastUpdate';
-import {Order, MetadataRaw} from './types';
+import {
+  MetadataRaw,
+  LastUpdateData,
+  MetadataOptions,
+  Env,
+  VersioningEnv,
+} from './types';
+import getSlug from './slug';
+import {escapeRegExp} from 'lodash';
+
+function removeVersionPrefix(str: string, version: string): string {
+  return str.replace(new RegExp(`^version-${escapeRegExp(version)}/?`), '');
+}
+
+function inferVersion(
+  dirName: string,
+  versioning: VersioningEnv,
+): string | undefined {
+  if (!versioning.enabled) {
+    return undefined;
+  }
+  if (/^version-/.test(dirName)) {
+    const inferredVersion = dirName
+      .split('/', 1)
+      .shift()!
+      .replace(/^version-/, '');
+    if (inferredVersion && versioning.versions.includes(inferredVersion)) {
+      return inferredVersion;
+    }
+    throw new Error(
+      `Can't infer version from folder=${dirName}
+Expected versions:
+- ${versioning.versions.join('- ')}`,
+    );
+  } else {
+    return 'next';
+  }
+}
 
 type Args = {
   source: string;
-  docsDir: string;
-  order: Order;
-  siteConfig: Partial<DocusaurusConfig>;
-  docsBasePath: string;
-  siteDir: string;
-  editUrl?: string;
-  showLastUpdateAuthor?: boolean;
-  showLastUpdateTime?: boolean;
+  refDir: string;
+  context: LoadContext;
+  options: MetadataOptions;
+  env: Env;
 };
 
-export default async function processMetadata({
-  source,
-  docsDir,
-  order,
-  siteConfig,
-  docsBasePath,
-  siteDir,
-  editUrl,
-  showLastUpdateAuthor,
-  showLastUpdateTime,
-}: Args): Promise<MetadataRaw> {
-  const filePath = path.join(docsDir, source);
-
-  const fileString = await fs.readFile(filePath, 'utf-8');
-  const {frontMatter: metadata = {}, excerpt} = parse(fileString);
-
-  // Default id is the file name.
-  if (!metadata.id) {
-    metadata.id = path.basename(source, path.extname(source));
-  }
-
-  if (metadata.id.includes('/')) {
-    throw new Error('Document id cannot include "/".');
-  }
-
-  // Default title is the id.
-  if (!metadata.title) {
-    metadata.title = metadata.id;
-  }
-
-  if (!metadata.description) {
-    metadata.description = excerpt;
-  }
-
-  const dirName = path.dirname(source);
-  if (dirName !== '.') {
-    const prefix = dirName;
-    if (prefix) {
-      metadata.id = `${prefix}/${metadata.id}`;
-    }
-  }
-
-  // Cannot use path.join() as it resolves '../' and removes the '@site'. Let webpack loader resolve it.
-  const aliasedPath = `@site/${path.relative(siteDir, filePath)}`;
-  metadata.source = aliasedPath;
-
-  // Build the permalink.
-  const {baseUrl} = siteConfig;
-
-  // If user has own custom permalink defined in frontmatter
-  // e.g: :baseUrl:docsUrl/:langPart/:versionPart/endiliey/:id
-  if (metadata.permalink) {
-    metadata.permalink = path.resolve(
-      metadata.permalink
-        .replace(/:baseUrl/, baseUrl)
-        .replace(/:docsUrl/, docsBasePath)
-        .replace(/:id/, metadata.id),
-    );
-  } else {
-    metadata.permalink = normalizeUrl([baseUrl, docsBasePath, metadata.id]);
-  }
-
-  // Determine order.
-  const {id} = metadata;
-  if (order[id]) {
-    metadata.sidebar = order[id].sidebar;
-    if (order[id].next) {
-      metadata.next = order[id].next;
-    }
-    if (order[id].previous) {
-      metadata.previous = order[id].previous;
-    }
-  }
-
-  if (editUrl) {
-    metadata.editUrl = normalizeUrl([editUrl, source]);
-  }
-
+async function lastUpdated(
+  filePath: string,
+  options: MetadataOptions,
+): Promise<LastUpdateData> {
+  const {showLastUpdateAuthor, showLastUpdateTime} = options;
   if (showLastUpdateAuthor || showLastUpdateTime) {
-    const fileLastUpdateData = lastUpdate(filePath);
+    // Use fake data in dev for faster development.
+    const fileLastUpdateData =
+      process.env.NODE_ENV === 'production'
+        ? await lastUpdate(filePath)
+        : {
+            author: 'Author',
+            timestamp: 1539502055,
+          };
 
     if (fileLastUpdateData) {
       const {author, timestamp} = fileLastUpdateData;
-      if (showLastUpdateAuthor && author) {
-        metadata.lastUpdatedBy = author;
-      }
-
-      if (showLastUpdateTime && timestamp) {
-        metadata.lastUpdatedAt = timestamp;
-      }
+      return {
+        lastUpdatedAt: showLastUpdateTime ? timestamp : undefined,
+        lastUpdatedBy: showLastUpdateAuthor ? author : undefined,
+      };
     }
   }
 
-  return metadata as MetadataRaw;
+  return {};
+}
+
+export default async function processMetadata({
+  source,
+  refDir,
+  context,
+  options,
+  env,
+}: Args): Promise<MetadataRaw> {
+  const {routeBasePath, editUrl, homePageId} = options;
+  const {siteDir, baseUrl} = context;
+  const {versioning} = env;
+  const filePath = path.join(refDir, source);
+
+  const fileMarkdownPromise = parseMarkdownFile(filePath);
+  const lastUpdatedPromise = lastUpdated(filePath, options);
+
+  const dirNameWithVersion = path.dirname(source); // ex: version-1.0.0/foo
+  const version = inferVersion(dirNameWithVersion, versioning); // ex: 1.0.0
+  const dirNameWithoutVersion = // ex: foo
+    version && version !== 'next'
+      ? removeVersionPrefix(dirNameWithVersion, version)
+      : dirNameWithVersion;
+
+  // The version portion of the url path. Eg: 'next', '1.0.0', and ''.
+  const versionPath =
+    version && version !== versioning.latestVersion ? version : '';
+
+  const relativePath = path.relative(siteDir, filePath);
+
+  const docsEditUrl = getEditUrl(relativePath, editUrl);
+
+  const {frontMatter = {}, excerpt} = await fileMarkdownPromise;
+  const {sidebar_label, custom_edit_url} = frontMatter;
+
+  // Default base id is the file name.
+  const baseID: string =
+    frontMatter.id || path.basename(source, path.extname(source));
+  if (baseID.includes('/')) {
+    throw new Error('Document id cannot include "/".');
+  }
+
+  const id =
+    dirNameWithVersion !== '.' ? `${dirNameWithVersion}/${baseID}` : baseID;
+  const unversionedId = version ? removeVersionPrefix(id, version) : id;
+
+  const isDocsHomePage = unversionedId === homePageId;
+  if (frontMatter.slug && isDocsHomePage) {
+    throw new Error(
+      `The docs homepage (homePageId=${homePageId}) is not allowed to have a frontmatter slug=${frontMatter.slug} => you have to chooser either homePageId or slug, not both`,
+    );
+  }
+
+  const docSlug = isDocsHomePage
+    ? '/'
+    : getSlug({
+        baseID,
+        dirName: dirNameWithoutVersion,
+        frontmatterSlug: frontMatter.slug,
+      });
+
+  // Default title is the id.
+  const title: string = frontMatter.title || baseID;
+
+  const description: string = frontMatter.description || excerpt;
+
+  const permalink = normalizeUrl([
+    baseUrl,
+    routeBasePath,
+    versionPath,
+    docSlug,
+  ]);
+
+  const {lastUpdatedAt, lastUpdatedBy} = await lastUpdatedPromise;
+
+  // Assign all of object properties during instantiation (if possible) for
+  // NodeJS optimization.
+  // Adding properties to object after instantiation will cause hidden
+  // class transitions.
+  const metadata: MetadataRaw = {
+    unversionedId,
+    id,
+    isDocsHomePage,
+    title,
+    description,
+    source: aliasedSitePath(filePath, siteDir),
+    permalink,
+    editUrl: custom_edit_url !== undefined ? custom_edit_url : docsEditUrl,
+    version,
+    lastUpdatedBy,
+    lastUpdatedAt,
+    sidebar_label,
+  };
+
+  return metadata;
 }

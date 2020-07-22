@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,22 +8,22 @@
 import globby from 'globby';
 import fs from 'fs';
 import path from 'path';
-import {encodePath, fileToPath} from '@docusaurus/utils';
-import {LoadContext, Plugin} from '@docusaurus/types';
+import {encodePath, fileToPath, aliasedSitePath} from '@docusaurus/utils';
+import {
+  LoadContext,
+  Plugin,
+  OptionValidationContext,
+  ValidationResult,
+} from '@docusaurus/types';
 
 import {PluginOptions, LoadedContent} from './types';
-
-const DEFAULT_OPTIONS: PluginOptions = {
-  path: 'src/pages', // Path to data on filesystem, relative to site dir.
-  routeBasePath: '', // URL Route.
-  include: ['**/*.{js,jsx}'], // Extensions to include.
-};
+import {PluginOptionSchema} from './pluginOptionSchema';
+import {ValidationError} from '@hapi/joi';
 
 export default function pluginContentPages(
   context: LoadContext,
-  opts: Partial<PluginOptions>,
-): Plugin<LoadedContent | null> {
-  const options = {...DEFAULT_OPTIONS, ...opts};
+  options: PluginOptions,
+): Plugin<LoadedContent | null, typeof PluginOptionSchema> {
   const contentPath = path.resolve(context.siteDir, options.path);
 
   return {
@@ -31,7 +31,7 @@ export default function pluginContentPages(
 
     getPathsToWatch() {
       const {include = []} = options;
-      const globPattern = include.map(pattern => `${contentPath}/${pattern}`);
+      const globPattern = include.map((pattern) => `${contentPath}/${pattern}`);
       return [...globPattern];
     },
 
@@ -49,10 +49,9 @@ export default function pluginContentPages(
         cwd: pagesDir,
       });
 
-      return pagesFiles.map(relativeSource => {
+      return pagesFiles.map((relativeSource) => {
         const source = path.join(pagesDir, relativeSource);
-        // Cannot use path.join() as it resolves '../' and removes the '@site'. Let webpack loader resolve it.
-        const aliasedSource = `@site/${path.relative(siteDir, source)}`;
+        const aliasedSource = aliasedSitePath(source, siteDir);
         const pathName = encodePath(fileToPath(relativeSource));
         // Default Language.
         return {
@@ -70,15 +69,29 @@ export default function pluginContentPages(
       const {addRoute} = actions;
 
       await Promise.all(
-        content.map(async metadataItem => {
+        content.map(async (metadataItem) => {
           const {permalink, source} = metadataItem;
           addRoute({
             path: permalink,
             component: source,
             exact: true,
+            modules: {
+              config: `@generated/docusaurus.config`,
+            },
           });
         }),
       );
     },
   };
+}
+
+export function validateOptions({
+  validate,
+  options,
+}: OptionValidationContext<PluginOptions, ValidationError>): ValidationResult<
+  PluginOptions,
+  ValidationError
+> {
+  const validatedOptions = validate(PluginOptionSchema, options);
+  return validatedOptions;
 }

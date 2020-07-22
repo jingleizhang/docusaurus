@@ -9,8 +9,8 @@ yarn add @docusaurus/mdx-loader
 ```
 
 ## Usage
-```js
 
+```js
 // ...
 module: {
   rules: [
@@ -20,21 +20,27 @@ module: {
       use: [
         'babel-loader',
         {
-            loader: '@docuaurus/mdx-loader',
-            options: {
-                // .. See options
-            }
-        }
-      ]
-    }
-  ]
+          loader: '@docusaurus/mdx-loader',
+          options: {
+            // .. See options
+          },
+        },
+      ],
+    },
+  ];
 }
 ```
 
 ## Options
 
 ### `rehypePlugins`
+
 Array of rehype plugins to manipulate the MDXHAST
 
 ### `remarkPlugins`
+
 Array of remark plugins to manipulate the MDXAST
+
+### `metadataPath`
+
+A function to provide the metadataPath depending on current loaded MDX path that will be exported as the MDX metadata.

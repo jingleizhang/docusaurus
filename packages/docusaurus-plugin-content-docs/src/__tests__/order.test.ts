@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -30,7 +30,10 @@ describe('createOrder', () => {
         {
           type: 'category',
           label: 'Category2',
-          items: [{type: 'doc', id: 'doc3'}, {type: 'doc', id: 'doc4'}],
+          items: [
+            {type: 'doc', id: 'doc3'},
+            {type: 'doc', id: 'doc4'},
+          ],
         },
       ],
       otherDocs: [
@@ -75,12 +78,18 @@ describe('createOrder', () => {
         {
           type: 'category',
           label: 'Category1',
-          items: [{type: 'doc', id: 'doc1'}, {type: 'doc', id: 'doc2'}],
+          items: [
+            {type: 'doc', id: 'doc1'},
+            {type: 'doc', id: 'doc2'},
+          ],
         },
         {
           type: 'category',
           label: 'Category2',
-          items: [{type: 'doc', id: 'doc3'}, {type: 'doc', id: 'doc4'}],
+          items: [
+            {type: 'doc', id: 'doc3'},
+            {type: 'doc', id: 'doc4'},
+          ],
         },
       ],
       otherDocs: [
@@ -188,7 +197,10 @@ describe('createOrder', () => {
         {
           type: 'category',
           label: 'Category2',
-          items: [{type: 'doc', id: 'doc3'}, {type: 'ref', id: 'doc4'}],
+          items: [
+            {type: 'doc', id: 'doc3'},
+            {type: 'ref', id: 'doc4'},
+          ],
         },
       ],
       otherDocs: [

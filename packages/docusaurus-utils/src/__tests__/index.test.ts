@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,6 +8,7 @@
 import path from 'path';
 import {
   fileToPath,
+  simpleHash,
   docuHash,
   genComponentName,
   genChunkName,
@@ -15,9 +16,31 @@ import {
   getSubFolder,
   normalizeUrl,
   posixPath,
+  objectWithKeySorted,
+  aliasedSitePath,
+  createExcerpt,
+  isValidPathname,
+  addTrailingSlash,
+  removeTrailingSlash,
+  removeSuffix,
+  removePrefix,
+  getFilePathForRoutePath,
+  addLeadingSlash,
 } from '../index';
 
 describe('load utils', () => {
+  test('aliasedSitePath', () => {
+    const asserts = {
+      'user/website/docs/asd.md': '@site/docs/asd.md',
+      'user/website/versioned_docs/foo/bar.md':
+        '@site/versioned_docs/foo/bar.md',
+      'user/docs/test.md': '@site/../docs/test.md',
+    };
+    Object.keys(asserts).forEach((file) => {
+      expect(aliasedSitePath(file, 'user/website')).toBe(asserts[file]);
+    });
+  });
+
   test('posixPath', () => {
     const asserts = {
       'c:/aaaa\\bbbb': 'c:/aaaa/bbbb',
@@ -25,8 +48,10 @@ describe('load utils', () => {
       '\\\\?\\c:\\aaaa\\bbbb': '\\\\?\\c:\\aaaa\\bbbb',
       'c:\\aaaa\\bbbb': 'c:/aaaa/bbbb',
       'foo\\bar': 'foo/bar',
+      'foo\\bar/lol': 'foo/bar/lol',
+      'website\\docs/**/*.{md,mdx}': 'website/docs/**/*.{md,mdx}',
     };
-    Object.keys(asserts).forEach(file => {
+    Object.keys(asserts).forEach((file) => {
       expect(posixPath(file)).toBe(asserts[file]);
     });
   });
@@ -43,8 +68,23 @@ describe('load utils', () => {
       '/blog/201712/14-introducing-docusaurus':
         'Blog20171214IntroducingDocusaurusA93',
     };
-    Object.keys(asserts).forEach(file => {
+    Object.keys(asserts).forEach((file) => {
       expect(genComponentName(file)).toBe(asserts[file]);
+    });
+  });
+
+  test('simpleHash', () => {
+    const asserts = {
+      '': 'd41',
+      '/foo-bar': '096',
+      '/foo/bar': '1df',
+      '/endi/lie': '9fa',
+      '/endi-lie': 'fd3',
+      '/yangshun/tay': '48d',
+      '/yangshun-tay': 'f3b',
+    };
+    Object.keys(asserts).forEach((file) => {
+      expect(simpleHash(file, 3)).toBe(asserts[file]);
     });
   });
 
@@ -59,7 +99,7 @@ describe('load utils', () => {
       '/yangshun/tay': 'yangshun-tay-48d',
       '/yangshun-tay': 'yangshun-tay-f3b',
     };
-    Object.keys(asserts).forEach(file => {
+    Object.keys(asserts).forEach((file) => {
       expect(docuHash(file)).toBe(asserts[file]);
     });
   });
@@ -75,9 +115,44 @@ describe('load utils', () => {
       'foo.js': '/foo',
       'foo/bar.js': '/foo/bar',
     };
-    Object.keys(asserts).forEach(file => {
+    Object.keys(asserts).forEach((file) => {
       expect(fileToPath(file)).toBe(asserts[file]);
     });
+  });
+
+  test('objectWithKeySorted', () => {
+    const obj = {
+      '/docs/adding-blog': '4',
+      '/docs/versioning': '5',
+      '/': '1',
+      '/blog/2018': '3',
+      '/youtube': '7',
+      '/users/en/': '6',
+      '/blog': '2',
+    };
+    expect(objectWithKeySorted(obj)).toMatchInlineSnapshot(`
+      Object {
+        "/": "1",
+        "/blog": "2",
+        "/blog/2018": "3",
+        "/docs/adding-blog": "4",
+        "/docs/versioning": "5",
+        "/users/en/": "6",
+        "/youtube": "7",
+      }
+    `);
+    const obj2 = {
+      b: 'foo',
+      c: 'bar',
+      a: 'baz',
+    };
+    expect(objectWithKeySorted(obj2)).toMatchInlineSnapshot(`
+      Object {
+        "a": "baz",
+        "b": "foo",
+        "c": "bar",
+      }
+    `);
   });
 
   test('genChunkName', () => {
@@ -91,7 +166,7 @@ describe('load utils', () => {
       '/users/en/': 'users-en-f7a',
       '/blog': 'blog-c06',
     };
-    Object.keys(firstAssert).forEach(str => {
+    Object.keys(firstAssert).forEach((str) => {
       expect(genChunkName(str)).toBe(firstAssert[str]);
     });
 
@@ -105,9 +180,23 @@ describe('load utils', () => {
       '/blog/1': 'blog-85-f-089',
       '/blog/2': 'blog-353-489',
     };
-    Object.keys(secondAssert).forEach(str => {
+    Object.keys(secondAssert).forEach((str) => {
       expect(genChunkName(str, undefined, 'blog')).toBe(secondAssert[str]);
     });
+
+    // Only generate short unique id
+    const thirdAssert = {
+      a: '0cc175b9',
+      b: '92eb5ffe',
+      c: '4a8a08f0',
+      d: '8277e091',
+    };
+    Object.keys(thirdAssert).forEach((str) => {
+      expect(genChunkName(str, undefined, undefined, true)).toBe(
+        thirdAssert[str],
+      );
+    });
+    expect(genChunkName('d', undefined, undefined, true)).toBe('8277e091');
   });
 
   test('idx', () => {
@@ -145,10 +234,9 @@ describe('load utils', () => {
       versions: [],
     });
     expect(idx(obj, ['translation', 'enabled'])).toEqual(true);
-    expect(idx(obj, ['translation', variable]).map(lang => lang.tag)).toEqual([
-      'en',
-      'ja',
-    ]);
+    expect(
+      idx(obj, ['translation', variable]).map((lang) => lang.tag),
+    ).toEqual(['en', 'ja']);
     expect(idx(test, ['arr', 0])).toEqual(1);
     expect(idx(undefined)).toBeUndefined();
     expect(idx(null)).toBeNull();
@@ -186,6 +274,14 @@ describe('load utils', () => {
         output: '/test/docs/ro/doc1',
       },
       {
+        input: ['/test/', '/', 'ro', 'doc1'],
+        output: '/test/ro/doc1',
+      },
+      {
+        input: ['/', '/', '2020/02/29/leap-day'],
+        output: '/2020/02/29/leap-day',
+      },
+      {
         input: ['', '/', 'ko', 'hello'],
         output: '/ko/hello',
       },
@@ -205,9 +301,178 @@ describe('load utils', () => {
         input: ['http://foobar.com', '', 'test'],
         output: 'http://foobar.com/test',
       },
+      {
+        input: ['http://foobar.com', '', 'test', '/'],
+        output: 'http://foobar.com/test/',
+      },
     ];
-    asserts.forEach(testCase => {
+    asserts.forEach((testCase) => {
       expect(normalizeUrl(testCase.input)).toBe(testCase.output);
     });
+
+    expect(() =>
+      normalizeUrl(['http:example.com', undefined]),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `"Url must be a string. Received undefined"`,
+    );
+  });
+
+  test('createExcerpt', () => {
+    const asserts = [
+      // Regular content
+      {
+        input: `
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ex urna, molestie et sagittis ut, varius ac justo.
+
+          Nunc porttitor libero nec vulputate venenatis. Nam nec rhoncus mauris. Morbi tempus est et nibh maximus, tempus venenatis arcu lobortis.
+        `,
+        output:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ex urna, molestie et sagittis ut, varius ac justo.',
+      },
+      // Content with imports declarations and Markdown markup, as well as Emoji
+      {
+        input: `
+          import Component from '@site/src/components/Component';
+          import Component from '@site/src/components/Component'
+
+          Lorem **ipsum** dolor sit \`amet\`[^1], consectetur _adipiscing_ elit. [**Vestibulum**](https://wiktionary.org/wiki/vestibulum) ex urna[^bignote], ~molestie~ et sagittis ut, varius ac justo :wink:.
+
+          Nunc porttitor libero nec vulputate venenatis. Nam nec rhoncus mauris. Morbi tempus est et nibh maximus, tempus venenatis arcu lobortis.
+        `,
+        output:
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ex urna, molestie et sagittis ut, varius ac justo.',
+      },
+      // Content beginning with admonitions
+      {
+        input: `
+          import Component from '@site/src/components/Component'
+
+          :::caution
+
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+          :::
+
+          Nunc porttitor libero nec vulputate venenatis. Nam nec rhoncus mauris. Morbi tempus est et nibh maximus, tempus venenatis arcu lobortis.
+        `,
+        output: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      },
+      // Content beginning with heading
+      {
+        input: `
+          ## Lorem ipsum dolor sit amet
+
+          Nunc porttitor libero nec vulputate venenatis. Nam nec rhoncus mauris. Morbi tempus est et nibh maximus, tempus venenatis arcu lobortis.
+        `,
+        output: 'Lorem ipsum dolor sit amet',
+      },
+      // Content beginning with blockquote
+      {
+        input: `
+          > Lorem ipsum dolor sit amet
+        `,
+        output: 'Lorem ipsum dolor sit amet',
+      },
+      // Content beginning with image (eg. blog post)
+      {
+        input: `
+          ![Lorem ipsum](/img/lorem-ipsum.svg)
+        `,
+        output: 'Lorem ipsum',
+      },
+    ];
+
+    asserts.forEach((testCase) => {
+      expect(createExcerpt(testCase.input)).toEqual(testCase.output);
+    });
+  });
+
+  test('isValidPathname', () => {
+    expect(isValidPathname('/')).toBe(true);
+    expect(isValidPathname('/hey')).toBe(true);
+    expect(isValidPathname('/hey/ho')).toBe(true);
+    expect(isValidPathname('/hey/ho/')).toBe(true);
+    expect(isValidPathname('/hey/h%C3%B4/')).toBe(true);
+    expect(isValidPathname('/hey///ho///')).toBe(true); // Unexpected but valid
+    //
+    expect(isValidPathname('')).toBe(false);
+    expect(isValidPathname('hey')).toBe(false);
+    expect(isValidPathname('/hey/hô')).toBe(false);
+    expect(isValidPathname('/hey?qs=ho')).toBe(false);
+    expect(isValidPathname('https://fb.com/hey')).toBe(false);
+    expect(isValidPathname('//hey')).toBe(false);
+  });
+});
+
+describe('addTrailingSlash', () => {
+  test('should no-op', () => {
+    expect(addTrailingSlash('/abcd/')).toEqual('/abcd/');
+  });
+  test('should add /', () => {
+    expect(addTrailingSlash('/abcd')).toEqual('/abcd/');
+  });
+});
+
+describe('addLeadingSlash', () => {
+  test('should no-op', () => {
+    expect(addLeadingSlash('/abc')).toEqual('/abc');
+  });
+  test('should add /', () => {
+    expect(addLeadingSlash('abc')).toEqual('/abc');
+  });
+});
+
+describe('removeTrailingSlash', () => {
+  test('should no-op', () => {
+    expect(removeTrailingSlash('/abcd')).toEqual('/abcd');
+  });
+  test('should remove /', () => {
+    expect(removeTrailingSlash('/abcd/')).toEqual('/abcd');
+  });
+});
+
+describe('removeSuffix', () => {
+  test('should no-op 1', () => {
+    expect(removeSuffix('abcdef', 'ijk')).toEqual('abcdef');
+  });
+  test('should no-op 2', () => {
+    expect(removeSuffix('abcdef', 'abc')).toEqual('abcdef');
+  });
+  test('should no-op 3', () => {
+    expect(removeSuffix('abcdef', '')).toEqual('abcdef');
+  });
+  test('should remove suffix', () => {
+    expect(removeSuffix('abcdef', 'ef')).toEqual('abcd');
+  });
+});
+
+describe('removePrefix', () => {
+  test('should no-op 1', () => {
+    expect(removePrefix('abcdef', 'ijk')).toEqual('abcdef');
+  });
+  test('should no-op 2', () => {
+    expect(removePrefix('abcdef', 'def')).toEqual('abcdef');
+  });
+  test('should no-op 3', () => {
+    expect(removePrefix('abcdef', '')).toEqual('abcdef');
+  });
+  test('should remove prefix', () => {
+    expect(removePrefix('abcdef', 'ab')).toEqual('cdef');
+  });
+});
+
+describe('getFilePathForRoutePath', () => {
+  test('works for /', () => {
+    expect(getFilePathForRoutePath('/')).toEqual('/index.html');
+  });
+  test('works for /somePath', () => {
+    expect(getFilePathForRoutePath('/somePath')).toEqual(
+      '/somePath/index.html',
+    );
+  });
+  test('works for /somePath/', () => {
+    expect(getFilePathForRoutePath('/somePath/')).toEqual(
+      '/somePath/index.html',
+    );
   });
 });

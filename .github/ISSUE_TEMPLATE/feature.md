@@ -1,18 +1,19 @@
 ---
 name: 🚀 Feature
 about: Submit a proposal/request for a new feature
+labels: 'feature, needs triage'
 ---
 
 <!--
   Consider requesting the feature on https://docusaurus-2.netlify.com/feedback/ instead.
-  Feature requests on v1 will not be accepted easily as we're focusing on building v2.
+  Feature requests on v1 are more likely to be missed as we're focusing on building v2.
 -->
 
 ## 🚀 Feature
 
 (A clear and concise description of what the feature is.)
 
-## Have you read the [Contributing Guidelines on issues](https://github.com/facebook/Docusaurus/blob/master/CONTRIBUTING.md#reporting-new-issues)?
+### Have you read the [Contributing Guidelines on issues](https://github.com/facebook/docusaurus/blob/master/CONTRIBUTING.md#reporting-new-issues)?
 
 (Write your answer here.)
 

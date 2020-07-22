@@ -1,7 +1,6 @@
 # https://help.github.com/articles/about-codeowners/
 
-/packages/docusaurus-1.x/  @endiliey
-/packages/docusaurus-init-1.x/  @endiliey
-/packages/docusaurus/  @endiliey @yangshun
-/website/  @endiliey @yangshun
-/website-1.x/  @endiliey @yangshun
+/packages/ @yangshun
+/packages/docusaurus-theme-classic/ @lex111
+/website/  @yangshun
+/website-1.x/  @yangshun

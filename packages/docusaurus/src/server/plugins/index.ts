@@ -1,22 +1,51 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import _ from 'lodash';
 import {generate} from '@docusaurus/utils';
 import fs from 'fs-extra';
-import importFresh from 'import-fresh';
 import path from 'path';
 import {
   LoadContext,
-  Plugin,
   PluginConfig,
   PluginContentLoadedActions,
   RouteConfig,
 } from '@docusaurus/types';
+import initPlugins, {InitPlugin} from './init';
+
+const DefaultPluginId = 'default';
+
+export function sortConfig(routeConfigs: RouteConfig[]): void {
+  // Sort the route config. This ensures that route with nested
+  // routes is always placed last.
+  routeConfigs.sort((a, b) => {
+    if (a.routes && !b.routes) {
+      return 1;
+    }
+    if (!a.routes && b.routes) {
+      return -1;
+    }
+    // Higher priority get placed first.
+    if (a.priority || b.priority) {
+      const priorityA = a.priority || 0;
+      const priorityB = b.priority || 0;
+      const score = priorityB - priorityA;
+
+      if (score !== 0) {
+        return score;
+      }
+    }
+
+    return a.path.localeCompare(b.path);
+  });
+
+  routeConfigs.forEach((routeConfig) => {
+    routeConfig.routes?.sort((a, b) => a.path.localeCompare(b.path));
+  });
+}
 
 export async function loadPlugins({
   pluginConfigs,
@@ -25,51 +54,34 @@ export async function loadPlugins({
   pluginConfigs: PluginConfig[];
   context: LoadContext;
 }): Promise<{
-  plugins: Plugin<any>[];
+  plugins: InitPlugin[];
   pluginsRouteConfigs: RouteConfig[];
+  globalData: any;
 }> {
-  // 1. Plugin Lifecycle - Initialization/Constructor
-  const plugins: Plugin<any>[] = _.compact(
-    pluginConfigs.map(pluginItem => {
-      let pluginModuleImport;
-      let pluginOptions = {};
-      if (!pluginItem) {
-        return null;
-      }
+  // 1. Plugin Lifecycle - Initialization/Constructor.
+  const plugins: InitPlugin[] = initPlugins({
+    pluginConfigs,
+    context,
+  });
 
-      if (typeof pluginItem === 'string') {
-        pluginModuleImport = pluginItem;
-      } else if (Array.isArray(pluginItem)) {
-        pluginModuleImport = pluginItem[0];
-        pluginOptions = pluginItem[1] || {};
-      }
-
-      if (!pluginModuleImport) {
-        return null;
-      }
-
-      // module is any valid module identifier - npm package or locally-resolved path.
-      const pluginModule: any = importFresh(pluginModuleImport);
-      return (pluginModule.default || pluginModule)(context, pluginOptions);
-    }),
-  );
-
-  // 2. Plugin lifecycle - loadContent
-  // Currently plugins run lifecycle in parallel and are not order-dependent. We could change
-  // this in future if there are plugins which need to run in certain order or depend on
-  // others for data.
+  // 2. Plugin Lifecycle - loadContent.
+  // Currently plugins run lifecycle methods in parallel and are not order-dependent.
+  // We could change this in future if there are plugins which need to
+  // run in certain order or depend on others for data.
   const pluginsLoadedContent = await Promise.all(
-    plugins.map(async plugin => {
+    plugins.map(async (plugin) => {
       if (!plugin.loadContent) {
         return null;
       }
-      const content = await plugin.loadContent();
-      return content;
+
+      return plugin.loadContent();
     }),
   );
 
-  // 3. Plugin lifecycle - contentLoaded
+  // 3. Plugin Lifecycle - contentLoaded.
   const pluginsRouteConfigs: RouteConfig[] = [];
+
+  const globalData = {};
 
   await Promise.all(
     plugins.map(async (plugin, index) => {
@@ -77,19 +89,42 @@ export async function loadPlugins({
         return;
       }
 
+      const pluginId = plugin.options.id ?? DefaultPluginId;
+
       const pluginContentDir = path.join(
         context.generatedFilesDir,
         plugin.name,
+        // TODO each plugin instance should have its folder
+        // pluginId,
       );
 
+      const addRoute: PluginContentLoadedActions['addRoute'] = (config) =>
+        pluginsRouteConfigs.push(config);
+
+      const createData: PluginContentLoadedActions['createData'] = async (
+        name,
+        content,
+      ) => {
+        const modulePath = path.join(pluginContentDir, name);
+        await fs.ensureDir(path.dirname(modulePath));
+        await generate(pluginContentDir, name, content);
+        return modulePath;
+      };
+
+      // the plugins global data are namespaced to avoid data conflicts:
+      // - by plugin name
+      // - by plugin id (allow using multiple instances of the same plugin)
+      const setGlobalData: PluginContentLoadedActions['setGlobalData'] = (
+        data,
+      ) => {
+        globalData[plugin.name] = globalData[plugin.name] ?? {};
+        globalData[plugin.name][pluginId] = data;
+      };
+
       const actions: PluginContentLoadedActions = {
-        addRoute: config => pluginsRouteConfigs.push(config),
-        createData: async (name, content) => {
-          const modulePath = path.join(pluginContentDir, name);
-          await fs.ensureDir(path.dirname(modulePath));
-          await generate(pluginContentDir, name, content);
-          return modulePath;
-        },
+        addRoute,
+        createData,
+        setGlobalData,
       };
 
       await plugin.contentLoaded({
@@ -99,8 +134,27 @@ export async function loadPlugins({
     }),
   );
 
+  // 4. Plugin Lifecycle - routesLoaded.
+  // Currently plugins run lifecycle methods in parallel and are not order-dependent.
+  // We could change this in future if there are plugins which need to
+  // run in certain order or depend on others for data.
+  await Promise.all(
+    plugins.map(async (plugin) => {
+      if (!plugin.routesLoaded) {
+        return null;
+      }
+
+      return plugin.routesLoaded(pluginsRouteConfigs);
+    }),
+  );
+
+  // Sort the route config. This ensures that route with nested
+  // routes are always placed last.
+  sortConfig(pluginsRouteConfigs);
+
   return {
     plugins,
     pluginsRouteConfigs,
+    globalData,
   };
 }

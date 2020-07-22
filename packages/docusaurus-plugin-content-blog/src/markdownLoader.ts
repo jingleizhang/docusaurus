@@ -1,30 +1,37 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-const {parseQuery, getOptions} = require('loader-utils');
 import {loader} from 'webpack';
+import {truncate, linkify} from './blogUtils';
+import {parseQuery, getOptions} from 'loader-utils';
 
-export = function(fileString: string) {
+const markdownLoader: loader.Loader = function (source) {
+  const fileString = source as string;
   const callback = this.async();
+  const {truncateMarker, siteDir, contentPath, blogPosts} = getOptions(this);
 
-  const {truncateMarker} = getOptions(this);
+  // Linkify posts
+  let finalContent = linkify(
+    fileString as string,
+    siteDir,
+    contentPath,
+    blogPosts,
+  );
 
-  let finalContent = fileString;
+  // Truncate content if requested (e.g: file.md?truncated=true).
+  const truncated: string | undefined = this.resourceQuery
+    ? parseQuery(this.resourceQuery).truncated
+    : undefined;
 
-  // Truncate content if requested (e.g: file.md?truncated=true)
-  const {truncated} = this.resourceQuery && parseQuery(this.resourceQuery);
-  if (
-    truncated &&
-    (typeof truncateMarker === 'string'
-      ? fileString.includes(truncateMarker)
-      : truncateMarker.test(fileString))
-  ) {
-    // eslint-disable-next-line
-    finalContent = fileString.split(truncateMarker)[0];
+  if (truncated) {
+    finalContent = truncate(finalContent, truncateMarker);
   }
+
   return callback && callback(null, finalContent);
-} as loader.Loader;
+};
+
+export default markdownLoader;

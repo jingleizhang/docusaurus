@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -23,10 +23,13 @@ function hasYarn(): boolean {
 }
 
 function isValidGitRepoUrl(gitRepoUrl: string): boolean {
-  return ['https://', 'git@'].some(item => gitRepoUrl.startsWith(item));
+  return ['https://', 'git@'].some((item) => gitRepoUrl.startsWith(item));
 }
 
-async function updatePkg(pkgPath: string, obj: any): Promise<void> {
+async function updatePkg(
+  pkgPath: string,
+  obj: Record<string, unknown>,
+): Promise<void> {
   const content = await fs.readFile(pkgPath, 'utf-8');
   const pkg = JSON.parse(content);
   const newPkg = Object.assign(pkg, obj);
@@ -34,7 +37,7 @@ async function updatePkg(pkgPath: string, obj: any): Promise<void> {
   await fs.outputFile(pkgPath, JSON.stringify(newPkg, null, 2));
 }
 
-export async function init(
+export default async function init(
   rootDir: string,
   siteName?: string,
   reqTemplate?: string,
@@ -43,14 +46,14 @@ export async function init(
   const templatesDir = path.resolve(__dirname, '../templates');
   const templates = fs
     .readdirSync(templatesDir)
-    .filter(d => !d.startsWith('.') && !d.startsWith('README'));
+    .filter((d) => !d.startsWith('.') && !d.startsWith('README'));
 
   const gitChoice = 'Git repository';
   const templateChoices = [...templates, gitChoice];
 
   let name = siteName;
 
-  // Prompt if siteName is not passed from CLI
+  // Prompt if siteName is not passed from CLI.
   if (!name) {
     const {name: promptedName} = await inquirer.prompt({
       type: 'input',
@@ -71,7 +74,7 @@ export async function init(
   }
 
   let template = reqTemplate;
-  // Prompt if template is not provided from CLI
+  // Prompt if template is not provided from CLI.
   if (!template) {
     const {template: promptedTemplate} = await inquirer.prompt({
       type: 'list',
@@ -82,7 +85,7 @@ export async function init(
     template = promptedTemplate;
   }
 
-  // If user choose Git repository, we'll prompt for the url
+  // If user choose Git repository, we'll prompt for the url.
   if (template === gitChoice) {
     const {gitRepoUrl} = await inquirer.prompt({
       type: 'input',
@@ -112,7 +115,7 @@ export async function init(
       throw new Error(chalk.red(`Cloning Git template: ${template} failed!`));
     }
   } else if (template && templates.includes(template)) {
-    // Docusaurus templates
+    // Docusaurus templates.
     try {
       await fs.copy(path.resolve(templatesDir, template), dest);
     } catch (err) {
@@ -125,7 +128,7 @@ export async function init(
     throw new Error('Invalid template');
   }
 
-  // Update package.json info
+  // Update package.json info.
   try {
     await updatePkg(path.join(dest, 'package.json'), {
       name: kebabCase(name),
@@ -137,7 +140,7 @@ export async function init(
     throw err;
   }
 
-  // We need to Rename the gitignore file to .gitignore
+  // We need to rename the gitignore file to .gitignore
   if (
     !fs.pathExistsSync(path.join(dest, '.gitignore')) &&
     fs.pathExistsSync(path.join(dest, 'gitignore'))

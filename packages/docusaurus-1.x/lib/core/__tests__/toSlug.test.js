@@ -1,18 +1,19 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
+const GitHubSlugger = require('github-slugger');
 const toSlug = require('../toSlug');
 
 [
   ['Hello world! ', 'hello-world'],
   ['React 16', 'react-16'],
-  ['Hello.   // (world?)! ', 'hello-world'],
+  ['Hello.   // (world?)! ', 'hello----world'],
   ['Привет мир! ', 'привет-мир'],
-  ['Über Café.', 'uber-cafe'],
+  ['Über Café.', 'über-café'],
   ['Someting long ...', 'someting-long-'],
   ['foo_bar', 'foo_bar'],
   ['some _ heading', 'some-_-heading'],
@@ -24,7 +25,7 @@ const toSlug = require('../toSlug');
   });
 });
 
-test('unique slugs if `context` argument passed', () => {
+test('unique slugs if `slug` argument passed', () => {
   [
     ['foo', 'foo'],
     ['foo', 'foo-1'],
@@ -34,9 +35,9 @@ test('unique slugs if `context` argument passed', () => {
     ['foo', 'foo-3'],
     ['foo_bar', 'foo_bar'],
     ['some _ heading', 'some-_-heading'],
-  ].reduce((context, [input, output]) => {
-    expect(toSlug(input, context)).toBe(output);
+  ].reduce((slugger, [input, output]) => {
+    expect(toSlug(input, slugger)).toBe(output);
 
-    return context;
-  }, {});
+    return slugger;
+  }, new GitHubSlugger());
 });

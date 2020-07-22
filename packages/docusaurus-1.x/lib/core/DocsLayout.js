@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -88,7 +88,7 @@ class DocsLayout extends React.Component {
           separateOnPageNav: hasOnPageNav,
         })}
         title={title}
-        description={content.trim().split('\n')[0]}
+        description={metadata.description || content.trim().split('\n')[0]}
         language={metadata.language}
         version={metadata.version}
         metadata={metadata}>
@@ -97,7 +97,7 @@ class DocsLayout extends React.Component {
             collapsible={this.props.config.docsSideNavCollapsible}
             metadata={metadata}
           />
-          <Container className="mainContainer">
+          <Container className="mainContainer docsContainer">
             <DocComponent
               metadata={metadata}
               content={content}

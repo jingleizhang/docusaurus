@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -44,9 +44,7 @@ class BlogPost extends React.Component {
     }`;
     if (post.authorFBID || post.authorImageURL) {
       const authorImageURL = post.authorFBID
-        ? `https://graph.facebook.com/${
-            post.authorFBID
-          }/picture/?height=200&width=200`
+        ? `https://graph.facebook.com/${post.authorFBID}/picture/?height=200&width=200`
         : post.authorImageURL;
       return (
         <div className={className}>

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,7 +7,8 @@
 
 const _ = require('lodash');
 const hljs = require('highlight.js');
-const Markdown = require('remarkable');
+const {Remarkable: Markdown} = require('remarkable');
+const {linkify} = require('remarkable/linkify');
 const prismjs = require('prismjs');
 const loadLanguages = require('prismjs/components/index');
 const chalk = require('chalk');
@@ -53,7 +54,11 @@ class MarkdownRenderer {
                 // Currently people using prismjs on Node have to individually require()
                 // every single language (https://github.com/PrismJS/prism/issues/593)
                 loadLanguages([language]);
-                return prismjs.highlight(str, prismjs.languages[language]);
+                return prismjs.highlight(
+                  str,
+                  prismjs.languages[language],
+                  language,
+                );
               } catch (err) {
                 if (err.code === 'MODULE_NOT_FOUND') {
                   const unsupportedLanguageError = chalk.yellow(
@@ -83,7 +88,6 @@ class MarkdownRenderer {
         return '';
       },
       html: true,
-      linkify: true,
     };
 
     // Allow overriding default options
@@ -100,9 +104,12 @@ class MarkdownRenderer {
     // Register anchors plugin
     md.use(anchors);
 
+    // Linkify
+    md.use(linkify);
+
     // Allow client sites to register their own plugins
     if (siteConfig.markdownPlugins) {
-      siteConfig.markdownPlugins.forEach(plugin => {
+      siteConfig.markdownPlugins.forEach((plugin) => {
         md.use(plugin);
       });
     }
@@ -121,4 +128,4 @@ class MarkdownRenderer {
 
 const renderMarkdown = new MarkdownRenderer();
 
-module.exports = source => renderMarkdown.toHtml(source);
+module.exports = (source) => renderMarkdown.toHtml(source);

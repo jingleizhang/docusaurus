@@ -11,13 +11,11 @@ Docusaurus uses [GitHub Flavored Markdown (GFM)](https://guides.github.com/featu
 
 Documents use the following markdown header fields that are enclosed by a line `---` on either side:
 
-`id`: A unique document id. If this field is not present, the document's `id` will default to its file name (without the extension).
-
-`title`: The title of your document. If this field is not present, the document's `title` will default to its `id`.
-
-`hide_title`: Whether to hide the title at the top of the doc.
-
-`sidebar_label`: The text shown in the document sidebar and in the next/previous button for this document. If this field is not present, the document's `sidebar_label` will default to its `title`.
+- `id`: A unique document id. If this field is not present, the document's `id` will default to its file name (without the extension).
+- `title`: The title of your document. If this field is not present, the document's `title` will default to its `id`.
+- `hide_title`: Whether to hide the title at the top of the doc.
+- `description`: The description of your document which will become the `<meta name="description" content="..."/>` and `<meta property="og:description" content="..."/>` in `<head>`, used by search engines. If this field is not present, it will default to the first line of the contents.
+- `sidebar_label`: The text shown in the document sidebar and in the next/previous button for this document. If this field is not present, the document's `sidebar_label` will default to its `title`.
 
 For example:
 
@@ -27,6 +25,7 @@ id: doc1
 title: My Document
 sidebar_label: Document
 ---
+
 ```
 
 Versioned documents have their ids altered to include the version number when they get copied. The new `id` is `version-${version}-${id}` where `${version}` is the version number of that document and `${id}` is the original `id`. Additionally, versioned documents get an added `original_id` field with the original document id.
@@ -40,6 +39,7 @@ title: My Document
 sidebar_label: Document
 original_id: doc1
 ---
+
 ```
 
 `custom_edit_url`: The URL for editing this document. If this field is not present, the document's edit URL will fall back to `editUrl` from optional fields of `siteConfig.js`. See [siteConfig.js](api-site-config.md) docs for more information.
@@ -50,8 +50,9 @@ For example:
 ---
 id: doc-markdown
 title: Markdown Features
-custom_edit_url: https://github.com/facebook/Docusaurus/edit/master/docs/api-doc-markdown.md
+custom_edit_url: https://github.com/facebook/docusaurus/edit/master/docs/api-doc-markdown.md
 ---
+
 ```
 
 ### Blog Posts
@@ -75,6 +76,7 @@ author: Frank Li
 authorURL: http://twitter.com/franchementli
 authorFBID: 100002976521003
 ---
+
 ```
 
 ## Extra Features
@@ -132,7 +134,6 @@ will lead to a table of contents of the functions:
 
 and each function will link to their corresponding sections in the page.
 
-
 ### Language-specific Code Tabs
 
 Display code in multiple programming languages using code tabs. First, mark the start and end of a code tabs group, by using `<!-- DOCUSAURUS_CODE_TABS -->` and `<!-- END_DOCUSAURUS_CODE_TABS -->` respectively in your markdown. Then start each tab with `<!--[TAB_TITLE]-->`.
@@ -146,26 +147,30 @@ produces this:
 <!--DOCUSAURUS_CODE_TABS-->
 
 <!--JavaScript-->
+
 ```js
 console.log('Hello, world!');
 ```
 
 <!--Python-->
+
 ```py
 print('Hello, world!')
 ```
 
 <!--C-->
+
 ```C
 #include <stdio.h>
 
 int main() {
-   printf("Hello World!");
-   return 0;
+  printf("Hello World!");
+  return 0;
 }
 ```
 
 <!--Pascal-->
+
 ```Pascal
 program HelloWorld;
 begin
@@ -205,7 +210,7 @@ You can find the full list of supported themes in the Highlight.js [`styles`](ht
 
 ### Registering additional languages
 
-While Highlight.js provides support for [many popular languages out of the box](https://highlightjs.org/static/demo/), you may find the need to register additional language support. For these cases, we provide an escape valve by exposing the `hljs` constant as part of the `highlight` config key. This in turn allows you to call [`registerLanguage`](http://highlightjs.readthedocs.io/en/latest/api.html#registerlanguage-name-language):
+While Highlight.js provides support for [many popular languages out of the box](https://highlightjs.org/static/demo/), you may find the need to register additional language support. For these cases, we provide an escape valve by exposing the `hljs` constant as part of the `highlight` config key. This, in turn, allows you to call [`registerLanguage`](http://highlightjs.readthedocs.io/en/latest/api.html#registerlanguage-name-language):
 
 ```js
 {

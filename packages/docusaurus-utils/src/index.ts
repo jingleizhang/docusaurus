@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,21 +8,42 @@
 import path from 'path';
 import matter from 'gray-matter';
 import {createHash} from 'crypto';
-import _ from 'lodash';
+import camelCase from 'lodash.camelcase';
+import kebabCase from 'lodash.kebabcase';
 import escapeStringRegexp from 'escape-string-regexp';
 import fs from 'fs-extra';
+import {URL} from 'url';
+
+// @ts-expect-error: no typedefs :s
+import resolvePathnameUnsafe from 'resolve-pathname';
 
 const fileHash = new Map();
 export async function generate(
   generatedFilesDir: string,
   file: string,
   content: any,
+  skipCache: boolean = process.env.NODE_ENV === 'production',
 ): Promise<void> {
   const filepath = path.join(generatedFilesDir, file);
-  const lastHash = fileHash.get(filepath);
-  const currentHash = createHash('md5')
-    .update(content)
-    .digest('hex');
+
+  if (skipCache) {
+    await fs.ensureDir(path.dirname(filepath));
+    await fs.writeFile(filepath, content);
+    return;
+  }
+
+  let lastHash = fileHash.get(filepath);
+
+  // If file already exists but its not in runtime cache yet,
+  // we try to calculate the content hash and then compare
+  // This is to avoid unnecessary overwriting and we can reuse old file.
+  if (!lastHash && fs.existsSync(filepath)) {
+    const lastContent = await fs.readFile(filepath, 'utf8');
+    lastHash = createHash('md5').update(lastContent).digest('hex');
+    fileHash.set(filepath, lastHash);
+  }
+
+  const currentHash = createHash('md5').update(content).digest('hex');
 
   if (lastHash !== currentHash) {
     await fs.ensureDir(path.dirname(filepath));
@@ -31,11 +52,22 @@ export async function generate(
   }
 }
 
-const indexRE = /(^|.*\/)index\.(md|js)$/i;
-const extRE = /\.(md|js)$/;
+export function objectWithKeySorted(obj: {[index: string]: any}) {
+  // https://github.com/lodash/lodash/issues/1459#issuecomment-460941233
+  return Object.keys(obj)
+    .sort()
+    .reduce((acc: any, key: string) => {
+      acc[key] = obj[key];
+      return acc;
+    }, {});
+}
+
+const indexRE = /(^|.*\/)index\.(md|js|jsx|ts|tsx)$/i;
+const extRE = /\.(md|js|ts|tsx)$/;
 
 /**
- * Convert filepath to url path. Example: 'index.md' -> '/', 'foo/bar.js' -> '/foo/bar',
+ * Convert filepath to url path.
+ * Example: 'index.md' -> '/', 'foo/bar.js' -> '/foo/bar',
  */
 export function fileToPath(file: string): string {
   if (indexRE.test(file)) {
@@ -47,41 +79,49 @@ export function fileToPath(file: string): string {
 export function encodePath(userpath: string): string {
   return userpath
     .split('/')
-    .map(item => encodeURIComponent(item))
+    .map((item) => encodeURIComponent(item))
     .join('/');
 }
 
+export function simpleHash(str: string, length: number): string {
+  return createHash('md5').update(str).digest('hex').substr(0, length);
+}
+
 /**
- * Given an input string, convert to kebab-case and append a hash. Avoid str collision
+ * Given an input string, convert to kebab-case and append a hash.
+ * Avoid str collision.
  */
 export function docuHash(str: string): string {
   if (str === '/') {
     return 'index';
   }
-  const shortHash = createHash('md5')
-    .update(str)
-    .digest('hex')
-    .substr(0, 3);
-  return `${_.kebabCase(str)}-${shortHash}`;
+  const shortHash = simpleHash(str, 3);
+  return `${kebabCase(str)}-${shortHash}`;
 }
 
 /**
- * Generate unique React Component Name. E.g: /foo-bar -> FooBar096
+ * Convert first string character to the upper case.
+ * E.g: docusaurus -> Docusaurus
+ */
+export function upperFirst(str: string): string {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+}
+
+/**
+ * Generate unique React Component Name.
+ * E.g: /foo-bar -> FooBar096
  */
 export function genComponentName(pagePath: string): string {
   if (pagePath === '/') {
     return 'index';
   }
   const pageHash = docuHash(pagePath);
-  const pascalCase = _.flow(
-    _.camelCase,
-    _.upperFirst,
-  );
-  return pascalCase(pageHash);
+  return upperFirst(camelCase(pageHash));
 }
 
 /**
- * Convert Windows backslash paths to posix style paths. E.g: endi\\lie -> endi/lie
+ * Convert Windows backslash paths to posix style paths.
+ * E.g: endi\\lie -> endi/lie
  */
 export function posixPath(str: string): string {
   const isExtendedLengthPath = /^\\\\\?\\/.test(str);
@@ -95,30 +135,34 @@ export function posixPath(str: string): string {
 
 const chunkNameCache = new Map();
 /**
- * Generate unique chunk name given a module path
+ * Generate unique chunk name given a module path.
  */
 export function genChunkName(
   modulePath: string,
   prefix?: string,
   preferredName?: string,
+  shortId: boolean = process.env.NODE_ENV === 'production',
 ): string {
   let chunkName: string | undefined = chunkNameCache.get(modulePath);
   if (!chunkName) {
-    let str = modulePath;
-    if (preferredName) {
-      const shortHash = createHash('md5')
-        .update(modulePath)
-        .digest('hex')
-        .substr(0, 3);
-      str = `${preferredName}${shortHash}`;
+    if (shortId) {
+      chunkName = simpleHash(modulePath, 8);
+    } else {
+      let str = modulePath;
+      if (preferredName) {
+        const shortHash = simpleHash(modulePath, 3);
+        str = `${preferredName}${shortHash}`;
+      }
+      const name = str === '/' ? 'index' : docuHash(str);
+      chunkName = prefix ? `${prefix}---${name}` : name;
     }
-    const name = str === '/' ? 'index' : docuHash(str);
-    chunkName = prefix ? `${prefix}---${name}` : name;
     chunkNameCache.set(modulePath, chunkName);
   }
   return chunkName;
 }
 
+// Too dynamic
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
 export function idx(target: any, keyPaths?: string | (string | number)[]): any {
   return (
     target &&
@@ -130,7 +174,7 @@ export function idx(target: any, keyPaths?: string | (string | number)[]): any {
 }
 
 /**
- * Given a filepath and dirpath, get the first directory
+ * Given a filepath and dirpath, get the first directory.
  */
 export function getSubFolder(file: string, refDir: string): string | null {
   const separator = escapeStringRegexp(path.sep);
@@ -142,25 +186,96 @@ export function getSubFolder(file: string, refDir: string): string | null {
   return match && match[1];
 }
 
-export function parse(
-  fileString: string,
-): {
+// Regex for an import statement.
+const importRegexString = '^(.*import){1}(.+){0,1}\\s[\'"](.+)[\'"];?';
+
+export function createExcerpt(fileString: string): string | undefined {
+  let fileContent = fileString.trimLeft();
+
+  if (RegExp(importRegexString).test(fileContent)) {
+    fileContent = fileContent
+      .replace(RegExp(importRegexString, 'gm'), '')
+      .trimLeft();
+  }
+
+  const fileLines = fileContent.split('\n');
+
+  for (const fileLine of fileLines) {
+    const cleanedLine = fileLine
+      // Remove HTML tags.
+      .replace(/<[^>]*>/g, '')
+      // Remove ATX-style headers.
+      .replace(/^\#{1,6}\s*([^#]*)\s*(\#{1,6})?/gm, '$1')
+      // Remove emphasis and strikethroughs.
+      .replace(/([\*_~]{1,3})(\S.*?\S{0,1})\1/g, '$2')
+      // Remove images.
+      .replace(/\!\[(.*?)\][\[\(].*?[\]\)]/g, '$1')
+      // Remove footnotes.
+      .replace(/\[\^.+?\](\: .*?$)?/g, '')
+      // Remove inline links.
+      .replace(/\[(.*?)\][\[\(].*?[\]\)]/g, '$1')
+      // Remove inline code.
+      .replace(/`(.+?)`/g, '$1')
+      // Remove blockquotes.
+      .replace(/^\s{0,3}>\s?/g, '')
+      // Remove admonition definition.
+      .replace(/(:{3}.*)/, '')
+      // Remove Emoji names within colons include preceding whitespace.
+      .replace(/\s?(:(::|[^:\n])+:)/g, '')
+      .trim();
+
+    if (cleanedLine) {
+      return cleanedLine;
+    }
+  }
+
+  return undefined;
+}
+
+type ParsedMarkdown = {
   frontMatter: {
+    // Returned by gray-matter
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   };
   content: string;
   excerpt: string | undefined;
-} {
-  const options: {} = {
+};
+export function parseMarkdownString(markdownString: string): ParsedMarkdown {
+  const options: Record<string, unknown> = {
     excerpt: (file: matter.GrayMatterFile<string>): void => {
-      file.excerpt = file.content
-        .trim()
-        .split('\n', 1)
-        .shift();
+      // Hacky way of stripping out import statements from the excerpt
+      // TODO: Find a better way to do so, possibly by compiling the Markdown content,
+      // stripping out HTML tags and obtaining the first line.
+      file.excerpt = createExcerpt(file.content);
     },
   };
-  const {data: frontMatter, content, excerpt} = matter(fileString, options);
-  return {frontMatter, content, excerpt};
+
+  try {
+    const {data: frontMatter, content, excerpt} = matter(
+      markdownString,
+      options,
+    );
+    return {frontMatter, content, excerpt};
+  } catch (e) {
+    throw new Error(`Error while parsing markdown front matter.
+This can happen if you use special characteres like : in frontmatter values (try using "" around that value)
+${e.message}`);
+  }
+}
+
+export async function parseMarkdownFile(
+  source: string,
+): Promise<ParsedMarkdown> {
+  const markdownString = await fs.readFile(source, 'utf-8');
+  try {
+    return parseMarkdownString(markdownString);
+  } catch (e) {
+    throw new Error(
+      `Error while parsing markdown file ${source}
+${e.message}`,
+    );
+  }
 }
 
 export function normalizeUrl(rawUrls: string[]): string {
@@ -204,17 +319,86 @@ export function normalizeUrl(rawUrls: string[]): string {
   }
 
   let str = resultArray.join('/');
-  // Each input component is now separated by a single slash except the possible first plain protocol part.
+  // Each input component is now separated by a single slash
+  // except the possible first plain protocol part.
 
-  // remove trailing slash before parameters or hash
+  // Remove trailing slash before parameters or hash.
   str = str.replace(/\/(\?|&|#[^!])/g, '$1');
 
-  // replace ? in parameters with &
+  // Replace ? in parameters with &.
   const parts = str.split('?');
   str = parts.shift() + (parts.length > 0 ? '?' : '') + parts.join('&');
 
-  // dedupe forward slashes
-  str = str.replace(/^\/+/, '/');
+  // Dedupe forward slashes in the entire path, avoiding protocol slashes.
+  str = str.replace(/([^:]\/)\/+/g, '$1');
+
+  // Dedupe forward slashes at the beginning of the path.
+  str = str.replace(/^\/+/g, '/');
 
   return str;
+}
+
+/**
+ * Alias filepath relative to site directory, very useful so that we
+ * don't expose user's site structure.
+ * Example: some/path/to/website/docs/foo.md -> @site/docs/foo.md
+ */
+export function aliasedSitePath(filePath: string, siteDir: string): string {
+  const relativePath = path.relative(siteDir, filePath);
+  // Cannot use path.join() as it resolves '../' and removes
+  // the '@site'. Let webpack loader resolve it.
+  return `@site/${relativePath}`;
+}
+
+export function getEditUrl(
+  fileRelativePath: string,
+  editUrl?: string,
+): string | undefined {
+  return editUrl
+    ? normalizeUrl([editUrl, posixPath(fileRelativePath)])
+    : undefined;
+}
+
+export function isValidPathname(str: string): boolean {
+  if (!str.startsWith('/')) {
+    return false;
+  }
+  try {
+    // weird, but is there a better way?
+    return new URL(str, 'https://domain.com').pathname === str;
+  } catch (e) {
+    return false;
+  }
+}
+
+// resolve pathname and fail fast if resolution fails
+export function resolvePathname(to: string, from?: string) {
+  return resolvePathnameUnsafe(to, from);
+}
+export function addLeadingSlash(str: string): string {
+  return str.startsWith('/') ? str : `/${str}`;
+}
+export function addTrailingSlash(str: string): string {
+  return str.endsWith('/') ? str : `${str}/`;
+}
+
+export function removeTrailingSlash(str: string): string {
+  return removeSuffix(str, '/');
+}
+
+export function removeSuffix(str: string, suffix: string): string {
+  if (suffix === '') {
+    return str; // always returns "" otherwise!
+  }
+  return str.endsWith(suffix) ? str.slice(0, -suffix.length) : str;
+}
+
+export function removePrefix(str: string, prefix: string): string {
+  return str.startsWith(prefix) ? str.slice(prefix.length) : str;
+}
+
+export function getFilePathForRoutePath(routePath: string): string {
+  const fileName = path.basename(routePath);
+  const filePath = path.dirname(routePath);
+  return path.join(filePath, `${fileName}/index.html`);
 }

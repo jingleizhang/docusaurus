@@ -21,20 +21,20 @@ At this point, you can grab all of the files inside the `website/build` director
 
 > For example, both Apache and Nginx serve content from `/var/www/html` by default. That said, choosing a web server or provider is outside the scope of Docusaurus.
 
-> When serving the site from your own web server, ensure the web server is serving the asset files with the proper HTTP headers. CSS files should be served with the `content-type` header of `text/css`. In the case of Nginx, this would mean setting `include /etc/nginx/mime.types;` in your `nginx.conf` file. See [this issue](https://github.com/facebook/Docusaurus/issues/602) for more info.
+> When serving the site from your own web server, ensure the web server is serving the asset files with the proper HTTP headers. CSS files should be served with the `content-type` header of `text/css`. In the case of Nginx, this would mean setting `include /etc/nginx/mime.types;` in your `nginx.conf` file. See [this issue](https://github.com/facebook/docusaurus/issues/602) for more info.
 
 ### Hosting on a Service:
 
-* [ZEIT Now](#using-zeit-now)
-* [GitHub Pages](#using-github-pages)
-* [Netlify](#hosting-on-netlify)
-* [Render](#hosting-on-render)
+- [ZEIT Now](#using-zeit-now)
+- [GitHub Pages](#using-github-pages)
+- [Netlify](#hosting-on-netlify)
+- [Render](#hosting-on-render)
 
 ### Using ZEIT Now
 
 Deploying your Docusaurus project to [ZEIT Now](https://zeit.co/now) will provide you with [various benefits](https://zeit.co/now) in the areas of performance and ease of use.
 
-Most importantly, however, deploying a Docusaurus project only takes a couple seconds:
+Most importantly, however, deploying a Docusaurus project only takes a couple of seconds:
 
 1. First, install their [command-line interface](https://zeit.co/download):
 
@@ -50,9 +50,11 @@ now
 
 **That's all.** Your docs will automatically be deployed.
 
+> Note that the directory structure Now supports is slightly different from the default directory structure of a Docusaurus project - The `docs` directory has to be within the `website` directory, ideally following the directory structure in this example. You will also have to specify a `customDocsPath` value in `siteConfig.js`. Take a look at the [now-examples repository for a Docusaurus project](https://github.com/zeit/now-examples/tree/master/docusaurus).
+
 ### Using GitHub Pages
 
-Docusaurus was designed to work really well with one of the most popular hosting solutions for open source projects: [GitHub Pages](https://pages.github.com/).
+Docusaurus was designed to work well with one of the most popular hosting solutions for open source projects: [GitHub Pages](https://pages.github.com/).
 
 #### Deploying to GitHub Pages
 
@@ -60,17 +62,16 @@ Docusaurus was designed to work really well with one of the most popular hosting
 
 > Even if your repository is private, anything published to a `gh-pages` branch will be [public](https://help.github.com/articles/user-organization-and-project-pages/).
 
-__Note:__ When you deploy as user/organization page, the publish script will deploy these sites to the root of the __`master`__ branch of the _username_.github.io repo. In this case, note that you will want to have the Docusaurus infra, your docs, etc. either in __another branch of the _username_.github.io repo__ (e.g., maybe call it `source`), or in another, separate repo (e.g. in the same as the documented source code).
+**Note:** When you deploy as user/organization page, the publish script will deploy these sites to the root of the **`master`** branch of the _username_.github.io repo. In this case, note that you will want to have the Docusaurus infra, your docs, etc. either in **another branch of the _username_.github.io repo** (e.g., maybe call it `source`), or in another, separate repo (e.g. in the same as the documented source code).
 
 2. You will need to modify the file `website/siteConfig.js` and add the required parameters.
 
-| Name               | Description                                                                                                                                                                              |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `organizationName` | The GitHub user or organization that owns the repository. If you are the owner, then it is your GitHub username. In the case of Docusaurus, that would be the "_facebook_" GitHub organization.                                                   |
-| `projectName`      | The name of the GitHub repository for your project. For example, the source code for Docusaurus is hosted at https://github.com/facebook/docusaurus, so our project name in this case would be "docusaurus". |
-| `url`              | Your website's URL. For projects hosted on GitHub pages, this will be "https://_username_.github.io" |
-| `baseUrl`          | Base URL for your project. For projects hosted on GitHub pages, it follows the format "/_projectName_/". For https://github.com/facebook/docusaurus, `baseUrl` is `/docusaurus/`. |
-
+| Name | Description |
+| --- | --- |
+| `organizationName` | The GitHub user or organization that owns the repository. If you are the owner, then it is your GitHub username. In the case of Docusaurus, that would be the "_facebook_" GitHub organization. |
+| `projectName` | The name of the GitHub repository for your project. For example, the source code for Docusaurus is hosted at https://github.com/facebook/docusaurus, so our project name, in this case, would be "docusaurus". |
+| `url` | Your website's URL. For projects hosted on GitHub pages, this will be "https://_username_.github.io" |
+| `baseUrl` | Base URL for your project. For projects hosted on GitHub pages, it follows the format "/_projectName_/". For https://github.com/facebook/docusaurus, `baseUrl` is `/docusaurus/`. |
 
 ```js
 const siteConfig = {
@@ -85,17 +86,19 @@ const siteConfig = {
 
 In case you want to deploy as a user or organization site, specify the project name as `<username>.github.io` or `<orgname>.github.io`. E.g. If your GitHub username is "user42" then _user42.github.io_, or in the case of an organization name of "org123", it will be _org123.github.io_.
 
-__Note:__ Not setting the `url` and `baseUrl` of your project might result in incorrect file paths generated which can cause broken links to assets paths like stylesheets and images.
+**Note:** Not setting the `url` and `baseUrl` of your project might result in incorrect file paths generated which can cause broken links to assets paths like stylesheets and images.
 
 > While we recommend setting the `projectName` and `organizationName` in `siteConfig.js`, you can also use environment variables `ORGANIZATION_NAME` and `PROJECT_NAME`.
 
 3. Now you have to specify the git user as an environment variable, and run the script [`publish-gh-pages`](./api-commands.md#docusaurus-publish)
 
-| Name       | Description                                                                                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `GIT_USER` | The username for a GitHub account that has commit access to this repo. For your own repositories, this will usually be your own GitHub username. The specified `GIT_USER` must have push access to the repository specified in the combination of `organizationName` and `projectName`. |
+| Name | Description |
+| --- | --- |
+| `GIT_USER` | The username for a GitHub account that has to commit access to this repo. For your repositories, this will usually be your own GitHub username. The specified `GIT_USER` must have push access to the repository specified in the combination of `organizationName` and `projectName`. |
 
 To run the script directly from the command-line, you can use the following, filling in the parameter values as appropriate.
+
+**Bash**
 
 ```bash
 GIT_USER=<GIT_USER> \
@@ -104,11 +107,17 @@ GIT_USER=<GIT_USER> \
   yarn run publish-gh-pages # or `npm run publish-gh-pages`
 ```
 
+**Windows**
+
+```batch
+cmd /C "set "GIT_USER=<GIT_USER>"&& set CURRENT_BRANCH=master && set USE_SSH=true && yarn run publish-gh-pages"
+```
+
 There are also two optional parameters that are set as environment variables:
 
-| Name             | Description                                                                                                                                                                                                                                                       |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `USE_SSH`        | If this is set to `true`, then SSH is used instead of HTTPS for the connection to the GitHub repo. HTTPS is the default if this variable is not set.                                                                                                              |
+| Name | Description |
+| --- | --- |
+| `USE_SSH` | If this is set to `true`, then SSH is used instead of HTTPS for the connection to the GitHub repo. HTTPS is the default if this variable is not set. |
 | `CURRENT_BRANCH` | The branch that contains the latest docs changes that will be deployed. Usually, the branch will be `master`, but it could be any branch (default or otherwise) except for `gh-pages`. If nothing is set for this variable, then the current branch will be used. |
 
 If you run into issues related to SSH keys, visit [GitHub's authentication documentation](https://help.github.com/articles/connecting-to-github-with-ssh/).
@@ -123,7 +132,7 @@ However, you can automate the publishing process with continuous integration (CI
 
 ## Automating Deployments Using Continuous Integration
 
-Continuous integration (CI) services are typically used to perform routine tasks whenever new commits are checked in to source control. These tasks can be any combination of running unit tests and integration tests, automating builds, publishing packages to NPM, and yes, deploying changes to your website. All you need to do to automate deployment of your website is to invoke the `publish-gh-pages` script whenever your docs get updated. In the following section, we'll be covering how to do just that using [CircleCI](https://circleci.com/), a popular continuous integration service provider.
+Continuous integration (CI) services are typically used to perform routine tasks whenever new commits are checked in to source control. These tasks can be any combination of running unit tests and integration tests, automating builds, publishing packages to NPM, and yes, deploying changes to your website. All you need to do to automate the deployment of your website is to invoke the `publish-gh-pages` script whenever your docs get updated. In the following section, we'll be covering how to do just that using [CircleCI](https://circleci.com/), a popular continuous integration service provider.
 
 ### Using CircleCI 2.0
 
@@ -138,7 +147,7 @@ If you haven't done so already, you can [setup CircleCI](https://circleci.com/si
 1.  Copy the text below into `.circleci/config.yml`.
 
 ```yaml
-# If you only want circle to run on direct commits to master, you can uncomment this out
+# If you only want the circle to run on direct commits to master, you can uncomment this out
 # and uncomment the filters: *filter-only-master down below too
 #
 # aliases:
@@ -188,15 +197,17 @@ Now, whenever a new commit lands in `master`, CircleCI will run your suite of te
 
 When initially deploying to a `gh-pages` branch using CircleCI, you may notice that some jobs triggered by commits to the `gh-pages` branch fail to run successfully due to a lack of tests (This can also result in chat/slack build failure notifications).
 
-You can work around this easily by:
-- Setting the environment variable `CUSTOM_COMMIT_MESSAGE` flag to the `publish-gh-pages` command with the contents of `[skip ci]`.
-e.g.
+You can work around this by:
+
+- Setting the environment variable `CUSTOM_COMMIT_MESSAGE` flag to the `publish-gh-pages` command with the contents of `[skip ci]`. e.g.
+
 ```bash
 CUSTOM_COMMIT_MESSAGE="[skip ci]" \
   yarn run publish-gh-pages # or `npm run publish-gh-pages`
 ```
 
 - Alternatively, you can work around this by creating a basic CircleCI config with the following contents:
+
 ```yaml
 # CircleCI 2.0 Config File
 # This config file will prevent tests from being run on the gh-pages branch.
@@ -241,7 +252,7 @@ Now, whenever a new commit lands in `master`, Travis CI will run your suite of t
 
 ### Hosting on ZEIT Now
 
-With [ZEIT Now](#using-zeit-now), you can deploy your site easily and connect it to [GitHub](https://zeit.co/github) or [GitLab](https://zeit.co/gitlab) to automatically receive a new deployment every time you push a commit.
+With [ZEIT Now](#using-zeit-now), you can deploy your site and connect it to [GitHub](https://zeit.co/github) or [GitLab](https://zeit.co/gitlab) to automatically receive a new deployment every time you push a commit.
 
 ### Hosting on Netlify
 
@@ -252,8 +263,8 @@ Steps to configure your Docusaurus-powered site on Netlify.
 1.  Select the branch to deploy. Default is `master`
 1.  Configure your build steps:
 
-    * For your build command enter: `cd website; npm install; npm run build;`
-    * For publish directory: `website/build/<projectName>` (use the `projectName` from your `siteConfig`)
+    - For your build command enter: `cd website; npm install; npm run build;`
+    - For publish directory: `website/build/<projectName>` (use the `projectName` from your `siteConfig`)
 
 1.  Click **Deploy site**
 
@@ -261,28 +272,28 @@ You can also configure Netlify to rebuild on every commit to your repository, or
 
 ### Hosting on Render
 
-Render offers free [static site](https://render.com/docs/static-sites) hosting with fully managed SSL, custom domains, a global CDN and continuous auto deploys from your Git repo. Deploy your app in just a few minutes by following these steps.
+Render offers free [static site](https://render.com/docs/static-sites) hosting with fully managed SSL, custom domains, a global CDN and continuous auto deploy from your Git repo. Deploy your app in just a few minutes by following these steps.
 
 1. Create a new **Web Service** on Render, and give Render's GitHub app permission to access your Docusaurus repo.
 
 2. Select the branch to deploy. The default is `master`.
 
-2. Enter the following values during creation.
+3. Enter the following values during creation.
 
-    |  Field  |  Value |
-    | ------- | ----- |
-    | **Environment** | `Static Site` |
-    | **Build Command** | `cd website; yarn install; yarn build` |
-    | **Publish Directory** | `website/build/<projectName>` |
+   | Field                 | Value                                  |
+   | --------------------- | -------------------------------------- |
+   | **Environment**       | `Static Site`                          |
+   | **Build Command**     | `cd website; yarn install; yarn build` |
+   | **Publish Directory** | `website/build/<projectName>`          |
 
-    `projectName` is the value you defined in your `siteConfig.js`.
+   `projectName` is the value you defined in your `siteConfig.js`.
 
-    ```javascript{7}
-    const siteConfig = {
-      // ...
-      projectName: 'your-project-name',
-      // ...
-    ```
+   ```javascript{7}
+   const siteConfig = {
+     // ...
+     projectName: 'your-project-name',
+     // ...
+   ```
 
 That's it! Your app will be live on your Render URL as soon as the build finishes.
 

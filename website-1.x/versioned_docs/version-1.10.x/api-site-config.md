@@ -28,7 +28,7 @@ Color configurations for the site.
 
 - `primaryColor` is the color used the header navigation bar and sidebars.
 - `secondaryColor` is the color seen in the second row of the header navigation bar when the site window is narrow (including on mobile).
-- Custom color configurations can also be added. For example, if user styles are added with colors specified as `$myColor`, then adding a `myColor` field to `colors` will allow you to easily configure this color.
+- Custom color configurations can also be added. For example, if user styles are added with colors specified as `$myColor`, then adding a `myColor` field to `colors` will allow you to configure this color.
 
 #### `copyright` [string]
 
@@ -129,8 +129,7 @@ The default version for the site to be shown. If this is not set, the latest ver
 
 #### `docsUrl` [string]
 
-The base URL for all docs file. Set this field to `''` to remove the `docs` prefix of the documentation URL.
-If unset, it is defaulted to `docs`.
+The base URL for all docs file. Set this field to `''` to remove the `docs` prefix of the documentation URL. If unset, it is defaulted to `docs`.
 
 #### `disableHeaderTitle` [boolean]
 
@@ -379,7 +378,7 @@ const siteConfig = {
   },
   markdownPlugins: [
     function foo(md) {
-      md.renderer.rules.fence_custom.foo = function(
+      md.renderer.rules.fence_custom.foo = function (
         tokens,
         idx,
         options,

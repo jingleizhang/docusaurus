@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,6 +18,13 @@ module.exports = [
     caption: 'Accord Project',
     image: '/img/users/accord-project.png',
     infoLink: 'https://docs.accordproject.org/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
+    caption: 'Adapt.js',
+    image: '/img/users/adaptjs.svg',
+    infoLink: 'https://adaptjs.org/',
     fbOpenSource: false,
     pinned: false,
   },
@@ -43,6 +50,13 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'Amphora Data',
+    image: '/img/users/AmphoraData.png',
+    infoLink: 'https://amphoradata.github.io/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'Anssr Data Platform',
     image: '/img/users/anssr.svg',
     infoLink: 'https://anssr.io/',
@@ -60,13 +74,6 @@ module.exports = [
     caption: 'Ara',
     image: '/img/users/ara.png',
     infoLink: 'https://ara-framework.github.io/website/',
-    fbOpenSource: false,
-    pinned: false,
-  },
-  {
-    caption: 'Atalaya',
-    image: '/img/users/atalaya.png',
-    infoLink: 'https://atalaya.io/',
     fbOpenSource: false,
     pinned: false,
   },
@@ -99,6 +106,13 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'Bottender',
+    image: '/img/users/bottender.png',
+    infoLink: 'https://bottender.js.org/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'Bowler',
     image: '/img/users/bowler.svg',
     infoLink: 'https://pybowler.io/',
@@ -120,6 +134,13 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'Channelize.io',
+    image: '/img/users/channelize.png',
+    infoLink: 'https://docs.channelize.io/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'CodeceptJS',
     image: '/img/users/codecept.png',
     infoLink: 'https://codecept.io/',
@@ -127,9 +148,23 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'Cohesity',
+    image: '/img/users/cohesity.png',
+    infoLink: 'https://developer.cohesity.com',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
+    caption: 'Collective',
+    image: '/img/users/collective.png',
+    infoLink: 'https://collective.gg/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'ConfigCat',
     image: '/img/users/configcat.svg',
-    infoLink: 'https://docs.configcat.com',
+    infoLink: 'https://configcat.com/docs',
     fbOpenSource: false,
     pinned: false,
   },
@@ -139,6 +174,13 @@ module.exports = [
     infoLink: 'https://facebook.github.io/create-react-app/',
     fbOpenSource: true,
     pinned: true,
+  },
+  {
+    caption: 'Day.js',
+    image: '/img/users/dayjs.png',
+    infoLink: 'https://day.js.org/',
+    fbOpenSource: false,
+    pinned: false,
   },
   {
     caption: 'Dep',
@@ -155,6 +197,13 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'Dime',
+    image: '/img/users/dime.png',
+    infoLink: 'https://docs.dimescheduler.com',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'Docusaurus',
     image: '/img/users/docusaurus.svg',
     infoLink: 'https://www.docusaurus.io',
@@ -167,6 +216,20 @@ module.exports = [
     infoLink: 'https://draftjs.org/',
     fbOpenSource: true,
     pinned: true,
+  },
+  {
+    caption: 'Draftail',
+    image: '/img/users/draftail.svg',
+    infoLink: 'https://www.draftail.org/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
+    caption: 'Erxes',
+    image: '/img/users/erxes.png',
+    infoLink: 'https://docs.erxes.io/',
+    fbOpenSource: false,
+    pinned: false,
   },
   {
     caption: 'Express Validator',
@@ -239,6 +302,13 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'Hazelcast Jet',
+    image: '/img/users/hazelcast-jet.svg',
+    infoLink: 'https://jet-start.sh',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'Hemera',
     image: '/img/users/hemera.png',
     infoLink: 'https://hemerajs.github.io/hemera/',
@@ -267,6 +337,13 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'Jafar',
+    image: 'https://yahoo.github.io/jafar/img/jafar.svg',
+    infoLink: 'https://yahoo.github.io/jafar',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'Jest',
     image: '/img/users/jest.png',
     infoLink: 'https://jestjs.io',
@@ -288,6 +365,13 @@ module.exports = [
     pinned: true,
   },
   {
+    caption: 'LisanJS',
+    image: '/img/users/lisan.svg',
+    infoLink: 'https://lisanjs.com',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'MakeItOpen',
     image: '/img/users/makeitopen.png',
     infoLink: 'https://makeitopen.com/',
@@ -300,6 +384,13 @@ module.exports = [
     infoLink: 'https://mailgo.js.org/',
     fbOpenSource: false,
     pinned: true,
+  },
+  {
+    caption: 'manylesson',
+    image: '/img/users/manylesson.png',
+    infoLink: 'http://www.manylesson.com/',
+    fbOpenSource: false,
+    pinned: false,
   },
   {
     caption: 'Metro',
@@ -319,13 +410,6 @@ module.exports = [
     caption: 'minapp',
     image: '/img/users/minapp.svg',
     infoLink: 'https://qiu8310.github.io/minapp/',
-    fbOpenSource: false,
-    pinned: false,
-  },
-  {
-    caption: 'ml5.js',
-    image: '/img/users/ml5.png',
-    infoLink: 'https://ml5js.org/',
     fbOpenSource: false,
     pinned: false,
   },
@@ -379,14 +463,6 @@ module.exports = [
     pinned: false,
   },
   {
-    caption: 'nteract',
-    image:
-      'https://media.githubusercontent.com/media/nteract/logos/master/nteract_logo_cube_book/exports/images/png/nteract_logo_mark_purple.png',
-    infoLink: 'https://docs.nteract.io/',
-    fbOpenSource: false,
-    pinned: false,
-  },
-  {
     caption: 'Open Power Quality',
     image: 'https://openpowerquality.org/img/opqlogo.png',
     infoLink: 'https://openpowerquality.org/',
@@ -397,6 +473,13 @@ module.exports = [
     caption: 'Overwolf',
     image: '/img/users/overwolf.svg',
     infoLink: 'https://overwolf.github.io/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
+    caption: 'Paubox',
+    image: '/img/users/paubox.png',
+    infoLink: 'https://docs.paubox.com/',
     fbOpenSource: false,
     pinned: false,
   },
@@ -430,7 +513,7 @@ module.exports = [
   },
   {
     caption: 'Polymath Network',
-    image: 'https://polymath.network/dist/assets/images/logo/logo-top-bar.svg',
+    image: 'https://developers.polymath.network/img/text.svg',
     infoLink: 'https://developers.polymath.network',
     fbOpenSource: false,
     pinned: false,
@@ -467,6 +550,13 @@ module.exports = [
     caption: 'Quix',
     image: '/img/users/quix.png',
     infoLink: 'https://wix.github.io/quix/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
+    caption: 'Quicksi',
+    image: '/img/users/quicksi.png',
+    infoLink: 'https://quicksi-bot.now.sh/',
     fbOpenSource: false,
     pinned: false,
   },
@@ -548,6 +638,13 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'Reactive Interaction Gateway',
+    image: '/img/users/reactive-interaction-gateway.svg',
+    infoLink: 'https://accenture.github.io/reactive-interaction-gateway/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
     caption: 'Reason',
     image: '/img/users/reason.svg',
     infoLink: 'https://reasonml.github.io/',
@@ -614,6 +711,13 @@ module.exports = [
     caption: 'ScanTrust',
     image: '/img/users/st-white-on-black.svg',
     infoLink: 'https://devportal.scantrust.com/',
+    fbOpenSource: false,
+    pinned: false,
+  },
+  {
+    caption: 'Shrine',
+    image: '/img/users/shrine.png',
+    infoLink: 'https://shrinerb.com',
     fbOpenSource: false,
     pinned: false,
   },
@@ -695,6 +799,13 @@ module.exports = [
     pinned: false,
   },
   {
+    caption: 'The Diff Podcast',
+    image: '/img/users/the-diff.svg',
+    infoLink: 'https://thediffpodcast.com',
+    fbOpenSource: true,
+    pinned: true,
+  },
+  {
     caption: 'tipsi-stripe',
     image: '/img/users/tipsi-stripe.png',
     infoLink: 'https://tipsi.github.io/tipsi-stripe/',
@@ -733,13 +844,6 @@ module.exports = [
     caption: 'Type Route',
     image: '/img/users/type-route.svg',
     infoLink: 'https://www.type-route.org',
-    fbOpenSource: false,
-    pinned: false,
-  },
-  {
-    caption: 'Vasern',
-    image: 'https://vasern.com/img/vasern.svg',
-    infoLink: 'https://vasern.com/',
     fbOpenSource: false,
     pinned: false,
   },

@@ -1,45 +1,63 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-export interface PluginOptions {
-  path: string;
+// eslint-disable-next-line spaced-comment
+/// <reference types="@docusaurus/module-type-aliases" />
+
+export type DocsVersion = string | null; // null = unversioned sites
+
+export interface MetadataOptions {
   routeBasePath: string;
-  include: string[];
-  sidebarPath: string;
-  docLayoutComponent: string;
-  docItemComponent: string;
-  remarkPlugins: string[];
-  rehypePlugins: string[];
+  homePageId?: string;
   editUrl?: string;
   showLastUpdateTime?: boolean;
   showLastUpdateAuthor?: boolean;
 }
 
+export interface PathOptions {
+  path: string;
+  sidebarPath: string;
+}
+
+export interface PluginOptions extends MetadataOptions, PathOptions {
+  id?: string;
+  include: string[];
+  docLayoutComponent: string;
+  docItemComponent: string;
+  remarkPlugins: ([Function, object] | Function)[];
+  rehypePlugins: string[];
+  admonitions: any;
+  disableVersioning: boolean;
+  excludeNextVersionDocs: boolean;
+}
+
 export type SidebarItemDoc = {
-  type: string;
+  type: 'doc' | 'ref';
   id: string;
 };
 
 export interface SidebarItemLink {
-  type: string;
+  type: 'link';
   href: string;
   label: string;
 }
 
 export interface SidebarItemCategory {
-  type: string;
+  type: 'category';
   label: string;
   items: SidebarItem[];
+  collapsed: boolean;
 }
 
 export interface SidebarItemCategoryRaw {
-  type: string;
+  type: 'category';
   label: string;
   items: SidebarItemRaw[];
+  collapsed?: boolean;
 }
 
 export type SidebarItem =
@@ -49,29 +67,39 @@ export type SidebarItem =
 
 export type SidebarItemRaw =
   | string
+  | SidebarCategoryShorthandRaw
   | SidebarItemDoc
   | SidebarItemLink
-  | SidebarItemCategoryRaw;
+  | SidebarItemCategoryRaw
+  | {
+      type: string;
+      [key: string]: unknown;
+    };
+
+export interface SidebarCategoryShorthandRaw {
+  [sidebarCategory: string]: SidebarItemRaw[];
+}
 
 // Sidebar given by user that is not normalized yet. e.g: sidebars.json
 export interface SidebarRaw {
-  [sidebarId: string]: {
-    [sidebarCategory: string]: SidebarItemRaw[];
-  };
+  [sidebarId: string]: SidebarCategoryShorthandRaw | SidebarItemRaw[];
 }
 
 export interface Sidebar {
-  [sidebarId: string]: SidebarItemCategory[];
+  [sidebarId: string]: SidebarItem[];
 }
 
 export interface DocsSidebarItemCategory {
-  type: string;
+  type: 'category';
   label: string;
-  items: (SidebarItemLink | DocsSidebarItemCategory)[];
+  items: DocsSidebarItem[];
+  collapsed?: boolean;
 }
 
+export type DocsSidebarItem = SidebarItemLink | DocsSidebarItemCategory;
+
 export interface DocsSidebar {
-  [sidebarId: string]: DocsSidebarItemCategory[];
+  [sidebarId: string]: DocsSidebarItem[];
 }
 
 export interface OrderMetadata {
@@ -84,17 +112,22 @@ export interface Order {
   [id: string]: OrderMetadata;
 }
 
-export interface MetadataRaw extends OrderMetadata {
+export interface LastUpdateData {
+  lastUpdatedAt?: number;
+  lastUpdatedBy?: string;
+}
+
+export interface MetadataRaw extends LastUpdateData {
+  unversionedId: string;
   id: string;
+  isDocsHomePage: boolean;
   title: string;
   description: string;
   source: string;
   permalink: string;
   sidebar_label?: string;
-  editUrl?: string;
-  lastUpdatedAt?: number;
-  lastUpdatedBy?: string;
-  [key: string]: any;
+  editUrl?: string | null;
+  version?: string;
 }
 
 export interface Paginator {
@@ -102,13 +135,18 @@ export interface Paginator {
   permalink: string;
 }
 
-export interface Metadata extends Omit<MetadataRaw, 'previous' | 'next'> {
+export interface Metadata extends MetadataRaw {
+  sidebar?: string;
   previous?: Paginator;
   next?: Paginator;
 }
 
 export interface DocsMetadata {
   [id: string]: Metadata;
+}
+
+export interface DocsMetadataRaw {
+  [id: string]: MetadataRaw;
 }
 
 export interface SourceToPermalink {
@@ -119,15 +157,52 @@ export interface PermalinkToSidebar {
   [permalink: string]: string;
 }
 
+export interface VersionToSidebars {
+  [version: string]: Set<string>;
+}
+
 export interface LoadedContent {
   docsMetadata: DocsMetadata;
   docsDir: string;
-  docsSidebars: Sidebar;
-  sourceToPermalink: SourceToPermalink;
+  docsSidebars: DocsSidebar;
   permalinkToSidebar: PermalinkToSidebar;
+  versionToSidebars: VersionToSidebars;
 }
 
 export type DocsBaseMetadata = Pick<
   LoadedContent,
   'docsSidebars' | 'permalinkToSidebar'
->;
+> & {
+  version: string | null;
+};
+
+export type VersioningEnv = {
+  enabled: boolean;
+  latestVersion: string | null;
+  versions: string[];
+  docsDir: string;
+  sidebarsDir: string;
+};
+
+export interface Env {
+  versioning: VersioningEnv;
+  // TODO: translation
+}
+
+export type GlobalDoc = {
+  id: string;
+  path: string;
+};
+
+export type GlobalVersion = {
+  name: DocsVersion;
+  path: string;
+  mainDocId: string; // home doc (if docs homepage configured), or first doc
+  docs: GlobalDoc[];
+};
+
+export type GlobalPluginData = {
+  path: string;
+  latestVersionName: DocsVersion;
+  versions: GlobalVersion[];
+};

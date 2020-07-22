@@ -1,17 +1,18 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import {loadRoutes, RouteConfig} from '../routes';
+import loadRoutes from '../routes';
+import {RouteConfig} from '@docusaurus/types';
 
 describe('loadRoutes', () => {
   test('nested route config', async () => {
     const nestedRouteConfig: RouteConfig = {
       component: '@theme/DocPage',
-      path: '/docs',
+      path: '/docs:route',
       modules: {
         docsMetadata: 'docs-b5f.json',
       },
@@ -35,7 +36,7 @@ describe('loadRoutes', () => {
         },
       ],
     };
-    const result = await loadRoutes([nestedRouteConfig]);
+    const result = await loadRoutes([nestedRouteConfig], '/');
     expect(result).toMatchSnapshot();
   });
 
@@ -63,7 +64,7 @@ describe('loadRoutes', () => {
         ],
       },
     };
-    const result = await loadRoutes([flatRouteConfig]);
+    const result = await loadRoutes([flatRouteConfig], '/');
     expect(result).toMatchSnapshot();
   });
 
@@ -72,20 +73,21 @@ describe('loadRoutes', () => {
       component: 'hello/world.js',
     } as RouteConfig;
 
-    expect(loadRoutes([routeConfigWithoutPath])).rejects.toMatchInlineSnapshot(`
-            [Error: Invalid routeConfig (Path must be a string and component is required) 
-            {"component":"hello/world.js"}]
-        `);
+    expect(loadRoutes([routeConfigWithoutPath], '/')).rejects
+      .toMatchInlineSnapshot(`
+      [Error: Invalid routeConfig (Path must be a string and component is required) 
+      {"component":"hello/world.js"}]
+    `);
 
     const routeConfigWithoutComponent = {
       path: '/hello/world',
     } as RouteConfig;
 
-    expect(loadRoutes([routeConfigWithoutComponent])).rejects
+    expect(loadRoutes([routeConfigWithoutComponent], '/')).rejects
       .toMatchInlineSnapshot(`
-            [Error: Invalid routeConfig (Path must be a string and component is required) 
-            {"path":"/hello/world"}]
-        `);
+      [Error: Invalid routeConfig (Path must be a string and component is required) 
+      {"path":"/hello/world"}]
+    `);
   });
 
   test('route config with empty (but valid) path string', async () => {
@@ -94,7 +96,7 @@ describe('loadRoutes', () => {
       component: 'hello/world.js',
     } as RouteConfig;
 
-    const result = await loadRoutes([routeConfig]);
+    const result = await loadRoutes([routeConfig], '/');
     expect(result).toMatchSnapshot();
   });
 });

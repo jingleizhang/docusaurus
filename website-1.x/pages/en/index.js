@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -55,102 +55,103 @@ function HomeSplash(props) {
 class Index extends React.Component {
   render() {
     const {config: siteConfig, language = 'en'} = this.props;
-    const pinnedUsersToShowcase = siteConfig.users.filter(user => user.pinned);
+    const pinnedUsersToShowcase = siteConfig.users.filter(
+      (user) => user.pinned,
+    );
 
     return (
       <div>
+        <div className="announcement">
+          <div className="announcement-inner">
+            Black Lives Matter.{' '}
+            <a href="https://support.eji.org/give/153413/#!/donation/checkout">
+              Support the Equal Justice Initiative
+            </a>
+            .
+          </div>
+        </div>
         <HomeSplash siteConfig={siteConfig} language={language} />
         <div className="announcement">
           <div className="announcement-inner">
-            We're working on{' '}
-            <a href="https://github.com/facebook/Docusaurus/issues/789">
-              Docusaurus 2
+            If you don't need advanced features such as versioning or
+            translations, try out{' '}
+            <a href="https://v2.docusaurus.io">Docusaurus 2</a> instead!
+            Contribute to its roadmap by suggesting features or{' '}
+            <a href="https://v2.docusaurus.io/feedback/">
+              giving feedback here
             </a>
-            , contribute to its roadmap by suggesting features or giving
-            feedback <a href="https://v2.docusaurus.io/feedback/">here</a>!
+            !
           </div>
         </div>
         <div className="mainContainer">
-          <Container padding={['bottom', 'top']} background="light">
-            <GridBlock
-              align="center"
-              contents={[
-                {
-                  content: `Save time and focus on your project's documentation. Simply
-                    write docs and blog posts with [Markdown](${
-                      siteConfig.baseUrl
-                    }docs/${this.props.language}/doc-markdown)
+          <div style={{marginTop: -40}}>
+            <Container padding={['bottom', 'top']} background="light">
+              <GridBlock
+                align="center"
+                contents={[
+                  {
+                    content: `Save time and focus on your project's documentation. Simply
+                    write docs and blog posts with [Markdown](${siteConfig.baseUrl}docs/${this.props.language}/doc-markdown)
                     and Docusaurus will publish a set of static html files ready
                     to serve.`,
-                  image: `${siteConfig.baseUrl}img/undraw_typewriter.svg`,
-                  imageAlign: 'top',
-                  imageAlt: 'Markdown',
-                  title: <translate>Powered by Markdown</translate>,
-                },
-                {
-                  content: `[Extend or customize](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/api-pages)
+                    image: `${siteConfig.baseUrl}img/undraw_typewriter.svg`,
+                    imageAlign: 'top',
+                    imageAlt: 'Markdown',
+                    title: <translate>Powered by Markdown</translate>,
+                  },
+                  {
+                    content: `[Extend or customize](${siteConfig.baseUrl}docs/${this.props.language}/api-pages)
                     your project's layout by reusing React. Docusaurus can be
                     extended while reusing the same header and footer.`,
-                  image: `${siteConfig.baseUrl}img/undraw_react.svg`,
-                  imageAlign: 'top',
-                  imageAlt: 'React',
-                  title: <translate>Built Using React</translate>,
-                },
-                {
-                  content: `[Localization](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/translation)
+                    image: `${siteConfig.baseUrl}img/undraw_react.svg`,
+                    imageAlign: 'top',
+                    imageAlt: 'React',
+                    title: <translate>Built Using React</translate>,
+                  },
+                  {
+                    content: `[Localization](${siteConfig.baseUrl}docs/${this.props.language}/translation)
                     comes pre-configured. Use [Crowdin](https://crowdin.com/) to translate your docs
                     into over 70 languages.`,
-                  image: `${siteConfig.baseUrl}img/undraw_around_the_world.svg`,
-                  imageAlign: 'top',
-                  imageAlt: 'Translation',
-                  title: <translate>Ready for Translations</translate>,
-                },
-              ]}
-              layout="threeColumn"
-            />
-            <br />
-            <br />
-            <GridBlock
-              align="center"
-              contents={[
-                {
-                  content: `Support users on all versions of your project. Document
-                    [versioning](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/versioning)
+                    image: `${siteConfig.baseUrl}img/undraw_around_the_world.svg`,
+                    imageAlign: 'top',
+                    imageAlt: 'Translation',
+                    title: <translate>Ready for Translations</translate>,
+                  },
+                ]}
+                layout="threeColumn"
+              />
+              <br />
+              <br />
+              <GridBlock
+                align="center"
+                contents={[
+                  {
+                    content: `Support users on all versions of your project. Document
+                    [versioning](${siteConfig.baseUrl}docs/${this.props.language}/versioning)
                     helps you keep documentation in sync with project releases.`,
-                  image: `${siteConfig.baseUrl}img/undraw_version_control.svg`,
-                  imageAlign: 'top',
-                  imageAlt: 'Document Versioning',
-                  title: <translate>Document Versioning</translate>,
-                },
-                {
-                  content: `Make it easy for your community to [find](${
-                    siteConfig.baseUrl
-                  }docs/${
-                    this.props.language
-                  }/search) what they need in your documentation.
+                    image: `${siteConfig.baseUrl}img/undraw_version_control.svg`,
+                    imageAlign: 'top',
+                    imageAlt: 'Document Versioning',
+                    title: <translate>Document Versioning</translate>,
+                  },
+                  {
+                    content: `Make it easy for your community to [find](${siteConfig.baseUrl}docs/${this.props.language}/search) what they need in your documentation.
                     We proudly support [Algolia documentation search](https://www.algolia.com/).`,
-                  image: `${siteConfig.baseUrl}img/undraw_algolia.svg`,
-                  imageAlign: 'top',
-                  imageAlt: 'Document Search',
-                  title: <translate>Document Search</translate>,
-                },
-              ]}
-              layout="twoColumn"
-            />
-          </Container>
+                    image: `${siteConfig.baseUrl}img/undraw_algolia.svg`,
+                    imageAlign: 'top',
+                    imageAlt: 'Document Search',
+                    title: <translate>Document Search</translate>,
+                  },
+                ]}
+                layout="twoColumn"
+              />
+            </Container>
+          </div>
           <Container padding={['bottom', 'top']}>
             <GridBlock
               contents={[
                 {
-                  content: `Get [up and running](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/site-creation)
+                  content: `Get [up and running](${siteConfig.baseUrl}docs/${this.props.language}/site-creation)
                     quickly without having to worry about site design.`,
                   imageAlign: 'right',
                   image: `${siteConfig.baseUrl}img/undraw_setup_wizard.svg`,
@@ -166,12 +167,8 @@ class Index extends React.Component {
               contents={[
                 {
                   content: `Make design and documentation changes by using the included
-                    [live server](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/site-preparation#verifying-installation).
-                    [Publish](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/publishing)
+                    [live server](${siteConfig.baseUrl}docs/${this.props.language}/site-preparation#verifying-installation).
+                    [Publish](${siteConfig.baseUrl}docs/${this.props.language}/publishing)
                     your site to GitHub pages or other static file hosts
                     manually, using a script, or with continuous integration
                     like CircleCI.`,
@@ -189,24 +186,14 @@ class Index extends React.Component {
               contents={[
                 {
                   content: `Docusaurus currently provides support to help your website
-                    use [translations](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/translation),
-                    [search](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/search),
-                    and [versioning](${siteConfig.baseUrl}docs/${
-                    this.props.language
-                  }/versioning),
-                    along with some other special [documentation markdown features](${
-                      siteConfig.baseUrl
-                    }docs/${this.props.language}/doc-markdown).
+                    use [translations](${siteConfig.baseUrl}docs/${this.props.language}/translation),
+                    [search](${siteConfig.baseUrl}docs/${this.props.language}/search),
+                    and [versioning](${siteConfig.baseUrl}docs/${this.props.language}/versioning),
+                    along with some other special [documentation markdown features](${siteConfig.baseUrl}docs/${this.props.language}/doc-markdown).
                     If you have ideas for useful features, feel free to
                     contribute on [GitHub](https://github.com/facebook/docusaurus)!`,
                   imageAlign: 'right',
-                  image: `${
-                    siteConfig.baseUrl
-                  }img/undraw_features_overview.svg`,
+                  image: `${siteConfig.baseUrl}img/undraw_features_overview.svg`,
                   imageAlt: 'Monochromatic Docusaurus',
                   title: <translate>Website Features</translate>,
                 },

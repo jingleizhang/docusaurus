@@ -17,6 +17,7 @@ const siteConfig = {
   algolia: {
     apiKey: 'my-api-key',
     indexName: 'my-index-name',
+    appId: 'app-id', // Optional, if you run the DocSearch crawler on your own
     algoliaOptions: {} // Optional, if provided by Algolia
   },
   ...
@@ -63,7 +64,7 @@ const siteConfig = {
 
 ## Customizing the placeholder
 
-If you want to change the placeholder (which defaults to *Search*), add the `placeholder` field in your config. For example, you may want the search bar to display *Ask me something*:
+If you want to change the placeholder (which defaults to _Search_), add the `placeholder` field in your config. For example, you may want the search bar to display _Ask me something_:
 
 ```js
 const siteConfig = {

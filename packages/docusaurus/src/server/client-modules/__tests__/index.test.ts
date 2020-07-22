@@ -1,17 +1,15 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import path from 'path';
+import loadClientModules from '../index';
 
-import {loadClientModules} from '../index';
-
-const pluginEmpty = require('./__fixtures__/plugin-empty');
-const pluginFooBar = require('./__fixtures__/plugin-foo-bar');
-const pluginHelloWorld = require('./__fixtures__/plugin-hello-world');
+import pluginEmpty from './__fixtures__/plugin-empty';
+import pluginFooBar from './__fixtures__/plugin-foo-bar';
+import pluginHelloWorld from './__fixtures__/plugin-hello-world';
 
 describe('loadClientModules', () => {
   test('empty', () => {

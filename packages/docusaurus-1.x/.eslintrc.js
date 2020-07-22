@@ -1,4 +1,11 @@
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 const OFF = 0;
+// eslint-disable-next-line no-unused-vars
 const WARNING = 1;
 const ERROR = 2;
 
@@ -33,6 +40,10 @@ module.exports = {
     'react/button-has-type': OFF, // 1
     'react/forbid-prop-types': OFF, // 1
     'react/require-default-props': OFF, // 1
+    'jsx-a11y/control-has-associated-label': OFF, // 1
+    'react/jsx-props-no-spreading': OFF, // 2
+    'max-classes-per-file': OFF, // 2
+    'prefer-object-spread': OFF, // 5
     'jsx-a11y/anchor-is-valid': OFF, // 9
     'import/no-unresolved': OFF, // 15
     'react/prefer-stateless-function': OFF, // 22

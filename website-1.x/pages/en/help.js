@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -37,7 +37,7 @@ class Help extends React.Component {
       {
         title: <translate>GitHub</translate>,
         content:
-          'At our [GitHub repo](https://github.com/facebook/docusaurus) Browse and submit [issues](https://github.com/facebook/Docusaurus/issues) or [pull requests](https://github.com/facebook/Docusaurus/pulls) for bugs you find or any new features you may want implemented. Be sure to also check out our [contributing information](https://github.com/facebook/Docusaurus/blob/master/CONTRIBUTING.md).',
+          'At our [GitHub repo](https://github.com/facebook/docusaurus) Browse and submit [issues](https://github.com/facebook/docusaurus/issues) or [pull requests](https://github.com/facebook/docusaurus/pulls) for bugs you find or any new features you may want implemented. Be sure to also check out our [contributing information](https://github.com/facebook/docusaurus/blob/master/CONTRIBUTING.md).',
       },
     ];
 

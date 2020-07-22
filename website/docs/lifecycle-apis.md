@@ -3,31 +3,154 @@ id: lifecycle-apis
 title: Lifecycle APIs
 ---
 
-_This section is a work in progress._
+:::caution
+
+This section is a work in progress.
+
+:::
 
 Lifecycle APIs are shared by Themes and Plugins.
 
-## `getPathsToWatch(): string[]`
+## `validateOptions({options,validate})`
+
+Return validated and normalized options for the plugin. This method is called before the plugin is initialized.You must return options since the returned options will be passed to plugin during intialization.
+
+### `options`
+
+`validateOptions` is called with `options` passed to plugin for validation and normalization.
+
+### `validate`
+
+`validateOptions` is called with `validate` function which takes a **[Joi](https://www.npmjs.com/package/@hapi/joi)** schema and options as argument, returns validated and normalized options. `validate` will automatically handle error and validation config.
+
+:::tip
+
+[Joi](https://www.npmjs.com/package/@hapi/joi) is recommended for validation and normalization of options.
+
+:::
+
+If you don't use **[Joi](https://www.npmjs.com/package/@hapi/joi)** for validation you can throw an Error in case of invalid options and return options in case of success.
+
+```js {8-11} title="my-plugin/src/index.js"
+module.exports = function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    // rest of methods
+  };
+};
+
+module.exports.validateOptions = ({options, validate}) => {
+  const validatedOptions = validate(myValidationSchema, options);
+  return validationOptions;
+};
+```
+
+You can also use ES modules style exports.
+
+```ts {8-11} title="my-plugin/src/index.ts"
+export default function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    // rest of methods
+  };
+}
+
+export function validateOptions({options, validate}) {
+  const validatedOptions = validate(myValidationSchema, options);
+  return validationOptions;
+}
+```
+
+## `validateThemeConfig({themeConfig,validate})`
+
+Return validated and normalized configuration for the theme.
+
+### `themeConfig`
+
+`validateThemeConfig` is called with `themeConfig` provided in `docusaurus.config.js` for validation and normalization.
+
+### `validate`
+
+`validateThemeConfig` is called with `validate` function which takes a **[Joi](https://www.npmjs.com/package/@hapi/joi)** schema and `themeConfig` as argument, returns validated and normalized options. `validate` will automatically handle error and validation config.
+
+:::tip
+
+[Joi](https://www.npmjs.com/package/@hapi/joi) is recommended for validation and normalization of theme config.
+
+:::
+
+If you don't use **[Joi](https://www.npmjs.com/package/@hapi/joi)** for validation you can throw an Error in case of invalid options.
+
+```js {8-11} title="my-theme/src/index.js"
+module.exports = function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    // rest of methods
+  };
+};
+
+module.exports.validateThemeConfig = ({themeConfig, validate}) => {
+  const validatedThemeConfig = validate(myValidationSchema, options);
+  return validatedThemeConfig;
+};
+```
+
+You can also use ES modules style exports.
+
+```ts {8-11} title="my-theme/src/index.ts"
+export default function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    // rest of methods
+  };
+}
+
+export function validateThemeConfig({themeConfig, validate}) {
+  const validatedThemeConfig = validate(myValidationSchema, options);
+  return validatedThemeConfig;
+}
+```
+
+## `getPathsToWatch()`
 
 Specifies the paths to watch for plugins and themes. The paths are watched by the dev server so that the plugin lifecycles are reloaded when contents in the watched paths change. Note that the plugins and themes modules are initially called with `context` and `options` from Node, which you may use to find the necessary directory information about the site.
 
-```js
-const contentPath = path.resolve(context.siteDir, options.path);
+Example:
 
-getPathsToWatch() {
-  const {include = []} = options;
-  const globPattern = include.map(pattern => `${contentPath}/${pattern}`);
-  return [...globPattern];
-}
+```js {5-7} title="docusaurus-plugin/src/index.js"
+const path = require('path');
+module.exports = function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    getPathsToWatch() {
+      const contentPath = path.resolve(context.siteDir, options.path);
+      return [`${contentPath}/**/*.{ts,tsx}`];
+    },
+  };
+};
 ```
 
 ## `async loadContent()`
 
-Plugins should use this lifecycle to fetch from data sources (filesystem, remote API, headless CMS, etc).
+Plugins should use this lifecycle to fetch from data sources (filesystem, remote API, headless CMS, etc) or doing some server processing.
+
+For example, this plugin below return a random integer between 1 to 10 as content;
+
+```js {5-6} title="docusaurus-plugin/src/index.js"
+const path = require('path');
+module.exports = function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    async loadContent() {
+      return 1 + Math.floor(Math.random() * 10);
+    },
+  };
+};
+```
 
 ## `async contentLoaded({content, actions})`
 
-Plugins should use the data loaded in `loadContent` and construct the pages/routes that consume the loaded data.
+Plugins should use the data loaded in `loadContent` and construct the pages/routes that consume the loaded data (optional).
 
 ### `content`
 
@@ -38,41 +161,123 @@ Plugins should use the data loaded in `loadContent` and construct the pages/rout
 `actions` contain two functions:
 
 - `addRoute(config: RouteConfig): void`
-- `createData(name: string, data: Object): Promise<string>`
 
-where `RouteConfig` is an object with the necessary data to configure a route to add to the website:
+Create a route to add to the website.
 
-```js
+```typescript
 interface RouteConfig {
   path: string;
   component: string;
   modules?: RouteModule;
   routes?: RouteConfig[];
   exact?: boolean;
+  priority?: number;
 }
-
 interface RouteModule {
   [module: string]: Module | RouteModule | RouteModule[];
 }
+type Module =
+  | {
+      path: string;
+      __import?: boolean;
+      query?: ParsedUrlQueryInput;
+    }
+  | string;
 ```
 
-Example `addRoute` call:
+- `createData(name: string, data: any): Promise<string>`
 
-```js
-addRoute({
-  path: permalink,
-  component: blogPostComponent,
-  exact: true,
-  modules: {
-    content: source,
-    metadata: metadataPath,
-    prevItem: prevItem && prevItem.metadataPath,
-    nextItem: nextItem && nextItem.metadataPath,
-  },
-});
+A function to help you create static data (generally json or string), that you can provide to your routes as props.
+
+For example, this plugin below create a `/friends` page which display `Your friends are: Yangshun, Sebastien`:
+
+```jsx title="website/src/components/Friends.js"
+import React from 'react';
+
+export default function FriendsComponent({friends}) {
+  return <div>Your friends are {friends.join(',')}</div>;
+}
 ```
 
-And `createData` takes a file name relative to to your plugin's directory, a string for the `JSON.stringify` result of your data, and will return a path to the module which you may then use as the path to items in your `RouteModule`. The modules will be loaded when the related pages are loaded following our optimizations according to the [PRPL pattern](https://developers.google.com/web/fundamentals/performance/prpl-pattern/).
+```js {4-23} title="docusaurus-friends-plugin/src/index.js"
+export default function friendsPlugin(context, options) {
+  return {
+    name: 'docusaurus-friends-plugin',
+    async contentLoaded({content, actions}) {
+      const {createData, addRoute} = actions;
+      // Create friends.json
+      const friends = ['Yangshun', 'Sebastien'];
+      const friendsJsonPath = await createData(
+        'friends.json',
+        JSON.stringify(friends),
+      );
+
+      // Add the '/friends' routes, and ensure it receives the friends props
+      addRoute({
+        path: '/friends',
+        component: '@site/src/components/Friends.js',
+        modules: {
+          // propName -> json file path
+          friends: friendsJsonPath,
+        },
+        exact: true,
+      });
+    },
+  };
+}
+```
+
+- `setGlobalData(data: any): void`
+
+This function permits to create some global plugin data, that can be read from any page, including the pages created by other plugins, and your theme layout.
+
+This data become accessible to your client-side/theme code, through the [`useGlobalData`](./docusaurus-core.md#useglobaldata) and [`usePluginData`](./docusaurus-core.md#useplugindatapluginname-string-pluginid-string)
+
+One this data is created, you can access it with the global data hooks APIs
+
+:::caution
+
+Global data is... global: its size affects the loading time of all pages of your site, so try to keep it small.
+
+Prefer `createData` and page-specific data whenever possible.
+
+:::
+
+For example, this plugin below create a `/friends` page which display `Your friends are: Yangshun, Sebastien`:
+
+```jsx title="website/src/components/Friends.js"
+import React from 'react';
+import {usePluginData} from '@docusaurus/useGlobalData';
+
+export default function FriendsComponent() {
+  const {friends} = usePluginData('my-friends-plugin');
+  return <div>Your friends are {friends.join(',')}</div>;
+}
+```
+
+```js {4-14} title="docusaurus-friends-plugin/src/index.js"
+export default function friendsPlugin(context, options) {
+  return {
+    name: 'docusaurus-friends-plugin',
+    async contentLoaded({content, actions}) {
+      const {setGlobalData, addRoute} = actions;
+      // Create friends global data
+      setGlobalData({friends: ['Yangshun', 'Sebastien']});
+
+      // Add the '/friends' routes
+      addRoute({
+        path: '/friends',
+        component: '@site/src/components/Friends.js',
+        exact: true,
+      });
+    },
+  };
+}
+```
+
+## `async routesLoaded(routes)`
+
+Plugins can modify the routes that were generated by all plugins. `routesLoaded` is called after `contentLoaded` hook.
 
 ## `configureWebpack(config, isServer, utils)`
 
@@ -92,42 +297,240 @@ The initial call to `configureWebpack` also receives a util object consists of t
 
 - `getStyleLoaders(isServer: boolean, cssOptions: {[key: string]: any}): Loader[]`
 - `getCacheLoader(isServer: boolean, cacheOptions?: {}): Loader | null`
-- `getCacheLoader(isServer: boolean, cacheOptions?: {}): Loader | null`
+- `getBabelLoader(isServer: boolean, babelOptions?: {}): Loader`
 
 You may use them to return your webpack configures conditionally.
 
-Example:
+For example, this plugin below modify the webpack config to transpile `.foo` file.
 
-```js
-configureWebpack(config, isServer, {getBabelLoader, getCacheLoader}) {
-  const {rehypePlugins, remarkPlugins, truncateMarker} = options;
+```js {4-11} title="docusaurus-plugin/src/index.js"
+module.exports = function (context, options) {
   return {
-    module: {
-      rules: [
-        {
-          test: /(\.mdx?)$/,
-          use: [
-            getCacheLoader(isServer),
-            getBabelLoader(isServer),
+    name: 'custom-docusaurus-plugin',
+    configureWebpack(config, isServer, utils) {
+      const {getCacheLoader} = utils;
+      return {
+        module: {
+          rules: [
             {
-              loader: '@docusaurus/mdx-loader',
-              options: {
-                remarkPlugins,
-                rehypePlugins,
-              },
+              test: /\.foo$/,
+              use: [getCacheLoader(isServer), 'my-custom-webpack-loader'],
             },
-            {
-              loader: path.resolve(__dirname, './markdownLoader.js'),
-              options: {
-                truncateMarker,
-              },
-            },
-          ].filter(Boolean),
+          ],
         },
-      ],
+      };
     },
   };
-},
+};
+```
+
+### Merge strategy
+
+We merge the Webpack configuration parts of plugins into the global Webpack config using [webpack-merge](https://github.com/survivejs/webpack-merge).
+
+It is possible to specify the merge strategy. For example, if you want a webpack rule to be prepended instead of appended:
+
+```js {4-11} title="docusaurus-plugin/src/index.js"
+module.exports = function (context, options) {
+  return {
+    name: 'custom-docusaurus-plugin',
+    configureWebpack(config, isServer, utils) {
+      return {
+        mergeStrategy: {'module.rules': 'prepend'},
+        module: {rules: [myRuleToPrepend]},
+      };
+    },
+  };
+};
+```
+
+Read the [webpack-merge strategy doc](https://github.com/survivejs/webpack-merge#merging-with-strategies) for more details.
+
+## `postBuild(props)`
+
+Called when a (production) build finishes.
+
+```ts
+type Props = {
+  siteDir: string;
+  generatedFilesDir: string;
+  siteConfig: DocusaurusConfig;
+  outDir: string;
+  baseUrl: string;
+  headTags: string;
+  preBodyTags: string;
+  postBodyTags: string;
+  routesPaths: string[];
+  plugins: Plugin<any>[];
+};
+```
+
+Example:
+
+```js {4-9} title="docusaurus-plugin/src/index.js"
+module.exports = function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    async postBuild({siteConfig = {}, routesPaths = [], outDir}) {
+      // Print out to console all the rendered routes.
+      routesPaths.map((route) => {
+        console.log(route);
+      });
+    },
+  };
+};
+```
+
+## `extendCli(cli)`
+
+Register an extra command to enhance the CLI of docusaurus. `cli` is [commander](https://www.npmjs.com/package/commander) object.
+
+Example:
+
+```js {4-11} title="docusaurus-plugin/src/index.js"
+module.exports = function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    extendCli(cli) {
+      cli
+        .command('roll')
+        .description('Roll a random number between 1 and 1000')
+        .action(() => {
+          console.log(Math.floor(Math.random() * 1000 + 1));
+        });
+    },
+  };
+};
+```
+
+## `injectHtmlTags()`
+
+Inject head and/or body HTML tags to Docusaurus generated HTML.
+
+```typescript
+function injectHtmlTags(): {
+  headTags?: HtmlTags;
+  preBodyTags?: HtmlTags;
+  postBodyTags?: HtmlTags;
+};
+
+type HtmlTags = string | HtmlTagObject | (string | HtmlTagObject)[];
+
+interface HtmlTagObject {
+  /**
+   * Attributes of the HTML tag
+   * E.g. `{'disabled': true, 'value': 'demo', 'rel': 'preconnect'}`
+   */
+  attributes?: {
+    [attributeName: string]: string | boolean;
+  };
+  /**
+   * The tag name e.g. `div`, `script`, `link`, `meta`
+   */
+  tagName: string;
+  /**
+   * The inner HTML
+   */
+  innerHTML?: string;
+}
+```
+
+Example:
+
+```js {4-28} title="docusaurus-plugin/src/index.js"
+module.exports = function (context, options) {
+  return {
+    name: 'docusaurus-plugin',
+    injectHtmlTags() {
+      return {
+        headTags: [
+          {
+            tagName: 'link',
+            attributes: {
+              rel: 'preconnect',
+              href: 'https://www.github.com',
+            },
+          },
+        ],
+        preBodyTags: [
+          {
+            tagName: 'script',
+            attributes: {
+              charset: 'utf-8',
+              src: '/noflash.js',
+            },
+          },
+        ],
+        postBodyTags: [`<div> This is post body </div>`],
+      };
+    },
+  };
+};
+```
+
+## `getThemePath()`
+
+Returns the path to the directory where the theme components can be found. When your users calls `swizzle`, `getThemePath` is called and its returned path is used to find your theme components.
+
+If you use the folder directory above, your `getThemePath` can be:
+
+```js {6-8} title="my-theme/src/index.js"
+const path = require('path');
+
+module.exports = function (context, options) {
+  return {
+    name: 'name-of-my-theme',
+    getThemePath() {
+      return path.resolve(__dirname, './theme');
+    },
+  };
+};
+```
+
+## `getTypeScriptThemePath()`
+
+Similar to `getThemePath()`, it should return the path to the directory where the source code of TypeScript theme components can be found. Theme components under this path will **not** be resolved by Webpack. Therefore, it is not a replacement of `getThemePath()`. Instead, this path is purely for swizzling TypeScript theme components.
+
+If you want to support TypeScript component swizzling for your theme, you can make the path returned by `getTypeScriptThemePath()` be your source directory, and make path returned by `getThemePath()` be the compiled JavaScript output.
+
+Example:
+
+```js {6-13} title="my-theme/src/index.js"
+const path = require('path');
+
+module.exports = function (context, options) {
+  return {
+    name: 'name-of-my-theme',
+    getThemePath() {
+      // Where compiled JavaScript output lives
+      return path.join(__dirname, '..', 'lib', 'theme');
+    },
+    getTypeScriptThemePath() {
+      // Where TypeScript source code lives
+      return path.resolve(__dirname, './theme');
+    },
+  };
+};
+```
+
+## `getClientModules()`
+
+Returns an array of paths to the modules that are to be imported in the client bundle. These modules are imported globally before React even renders the initial UI.
+
+As an example, to make your theme load a `customCss` object from `options` passed in by the user:
+
+```js {7-9} title="my-theme/src/index.js"
+const path = require('path');
+
+module.exports = function (context, options) {
+  const {customCss} = options || {};
+  return {
+    name: 'name-of-my-theme',
+    getClientModules() {
+      return [customCss];
+    },
+  };
+};
 ```
 
 <!--
@@ -139,7 +542,7 @@ For example, the in docusaurus-plugin-content-docs:
 
 ## Example
 
-Mind model for a presumptuous plugin implementation.
+Here's a mind model for a presumptuous plugin implementation.
 
 ```jsx
 const DEFAULT_OPTIONS = {
@@ -149,7 +552,7 @@ const DEFAULT_OPTIONS = {
 // A JavaScript function that returns an object.
 // `context` is provided by Docusaurus. Example: siteConfig can be accessed from context.
 // `opts` is the user-defined options.
-module.exports = function(context, opts) {
+module.exports = function (context, opts) {
   // Merge defaults with user-defined options.
   const options = {...DEFAULT_OPTIONS, ...options};
 
@@ -162,17 +565,22 @@ module.exports = function(context, opts) {
     name: 'docusaurus-my-project-cool-plugin',
 
     async loadContent() {
-      // The loadContent hook is executed after siteConfig and env has been loaded
-      // You can return a JavaScript object that will be passed to contentLoaded hook
+      // The loadContent hook is executed after siteConfig and env has been loaded.
+      // You can return a JavaScript object that will be passed to contentLoaded hook.
     },
 
     async contentLoaded({content, actions}) {
-      // contentLoaded hook is done after loadContent hook is done
-      // actions are set of functional API provided by Docusaurus. e.g: addRoute
+      // The contentLoaded hook is done after loadContent hook is done.
+      // `actions` are set of functional API provided by Docusaurus (e.g. addRoute)
+    },
+
+    async routesLoaded(routes) {
+      // The routesLoaded hook is done after contentLoaded hook is done.
+      // This can be useful if you need to change any route.
     },
 
     async postBuild(props) {
-      // after docusaurus <build> finish
+      // After docusaurus <build> finish.
     },
 
     // TODO
@@ -197,7 +605,7 @@ module.exports = function(context, opts) {
     },
 
     getPathsToWatch() {
-      // Path to watch
+      // Paths to watch.
     },
 
     getThemePath() {
@@ -209,6 +617,14 @@ module.exports = function(context, opts) {
       // Return an array of paths to the modules that are to be imported
       // in the client bundle. These modules are imported globally before
       // React even renders the initial UI.
+    },
+
+    extendCli(cli) {
+      // Register an extra command to enhance the CLI of Docusaurus
+    },
+
+    injectHtmlTags() {
+      // Inject head and/or body HTML tags.
     },
   };
 };
